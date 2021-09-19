@@ -312,6 +312,49 @@ In Progress
 
 # 3. Local Development
 
+## 3.0 Database Configuration
+postgresql installation
+
+```
+sudo apt update
+sudo apt install postgresql
+```
+
+create user root with password 1234
+
+```
+sudo -i -u postgres
+psql
+
+CREATE USER root WITH PASSWORD '1234';
+```
+
+create superuser root with password 1234
+
+```
+sudo -i -u postgres
+psql
+
+CREATE USER root WITH PASSWORD '1234';
+ALTER USER root WITH Superuser;
+```
+
+create database
+
+```
+\q
+createdb fmdev
+```
+
+create a .env.development file with the content:
+```
+DB_HOST=localhost
+DB_USER=root
+DB_PORT=5432
+DB_PWD=1234
+DB_NAME=fmdev
+```
+
 ## 3.1 Backend Module
 
 ```sh
@@ -327,6 +370,12 @@ python run.py
 ```sh
 python migrate.py db migrate
 python migrate.py db upgrade
+```
+
+after that run on psql or a sgbd like dbeaver or pgadmin to populate the database
+
+```
+scripts/main.sql
 ```
 
 ## 3.3 Frontend Module
