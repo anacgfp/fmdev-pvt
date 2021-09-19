@@ -2,7 +2,7 @@ import axios from 'axios';
 import store from '../store';
 
 const api = axios.create({
-  baseURL: `${process.env.REACT_APP_HOST}/api/`
+  baseURL: 'http://127.0.0.1:5000/api/'
 });
 
 api.interceptors.request.use((config) => {
