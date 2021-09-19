@@ -320,15 +320,6 @@ sudo apt update
 sudo apt install postgresql
 ```
 
-create user root with password 1234
-
-```
-sudo -i -u postgres
-psql
-
-CREATE USER root WITH PASSWORD '1234';
-```
-
 create superuser root with password 1234
 
 ```
