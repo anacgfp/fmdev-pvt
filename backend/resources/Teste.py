@@ -1,4 +1,5 @@
 import traceback
+from flask import request, current_app
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required
 import json
@@ -7,19 +8,23 @@ from tqdm import tqdm
 import datetime as dt
 import pandas as pd
 import glob
+import uuid
+
 
 # https://github.com/geovanneoliveira/LVF-pipeline/blob/main/data%20processing/0%20-%20Data%20Processing%20Flow.ipynb
 
-class Teste(Resource):
-    file = "/content/Fluxo_de_Entradas-OUT-MAI.json"
+class Teste(Resource): 
 
-    def importjson(self, file=file):
+    def importjson(self):
+        # @TODO tornar mais genérico
+        file = f"{current_app.config.get('PRE_PROCESSING_RAW')}/Fluxo_de_Entradas-XYZ-KWQ.json"
+
         with open(file) as jsonFile:
-            jsonObject = json.load(jsonFile)
+            json_object = json.load(jsonFile)
             jsonFile.close()
 
         data = []
-        data = jsonObject['data']['entrace_flow']['data']
+        data = json_object['data']['entrace_flow']['data']
 
         df = pd.DataFrame(data)
         return df
@@ -28,7 +33,20 @@ class Teste(Resource):
         return df.dropna() # Remove all not a number
 
     def renameCol(self, df, col, new_col):
-        return df.rename(columns={col:new_col}) # Rename Column
+        return df.rename(columns={col:new_col}) # Rename Column    
+    
+    def save_file(self, df):
+        payload = request.get_json()
+
+        if 'path' in payload:
+            return payload['path']
+
+        file_id = uuid.uuid4()
+        path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/{file_id}.csv"
+
+        df.to_csv(path, index=False)
+
+        return path
 
     def convertDate(self, df, col = 'Key'):
 
@@ -53,19 +71,14 @@ class Teste(Resource):
     def post(self):
         try:
             df = self.importjson()
-            # print('Original dataset ' + str(df.shape) + '\n')
-            # print(tabulate(df.head(), headers='keys', tablefmt='psql'))
             
             df = self.removeNA(df)
-            # print('Remove N/A ' + str(df.shape))
 
             df = self.renameCol(df, 'value', 'Quantidade de Entradas')
             df = self.convertDate(df, 'key')
-            # print('\n\nConvert Date' + str(df.shape) + '\n')
 
-            # print(tabulate(df.head(), headers='keys', tablefmt='psql'))
             # @TODO: Implementar aqui função de salvar o arquivo igual ao PrePRocessing.py
-            df.to_excel('flow_dataset.xlsx', index=False)
+            df = df.to_json()
 
             return df
         except:
