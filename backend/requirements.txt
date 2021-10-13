@@ -73,4 +73,4 @@ Werkzeug==0.16.0
 xgboost==1.0.2
 zict==2.0.0
 tabulate==0.8.9
-
+seaborn==0.10.1
