@@ -74,3 +74,4 @@ xgboost==1.0.2
 zict==2.0.0
 tabulate==0.8.9
 seaborn==0.10.1
+openpyxl==3.0.9

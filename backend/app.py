@@ -19,7 +19,7 @@ from resources.Download import Download
 from resources.Datasource import Datasource
 from resources.File import File
 from resources.Phenomenon import Phenomenon
-from resources.Teste import Teste
+from resources.PreprocessingFlow import PreprocessingFlow
 from resources.PreprocessingSales import PreprocessingSales
 from resources.PreprocessingWifi import PreprocessingWifi
 from resources.PreprocessingAll import PreprocessingAll
@@ -31,10 +31,10 @@ api = Api(api_bp)
 api.add_resource(Login, '/auth/login')
 api.add_resource(File, '/file', '/file/<string:key>')
 api.add_resource(Register, '/auth/register')
-# api.add_resource(LmsResource, '/lms')
-# api.add_resource(Subject, '/subject')
-# api.add_resource(Course, '/course')
-# api.add_resource(Semester, '/semester')
+api.add_resource(LmsResource, '/lms')
+api.add_resource(Subject, '/subject')
+api.add_resource(Course, '/course')
+api.add_resource(Semester, '/semester')
 api.add_resource(Indicator, '/indicator')
 api.add_resource(PreProcessing, '/pre-processing')
 api.add_resource(Chart, '/chart')
@@ -47,7 +47,7 @@ api.add_resource(Predict, '/predict/<string:key>')
 api.add_resource(Download, '/download/<string:key>')
 api.add_resource(Datasource, '/data-source', '/data-source/<string:key>')
 api.add_resource(Phenomenon, '/phenomenon')
-api.add_resource(Teste, '/teste')
+api.add_resource(PreprocessingFlow, '/prepr-flow')
 api.add_resource(PreprocessingSales, '/prepr-sales')
 api.add_resource(PreprocessingWifi, '/prepr-wifi')
 api.add_resource(PreprocessingAll, '/prepr')

@@ -8,65 +8,42 @@ from tqdm import tqdm
 import datetime as dt
 import pandas as pd
 import glob
-import uuid
+from utils import preprocessing_utils
 
 class PreprocessingWifi(Resource):
+    data_login = 'Data Login'
+    gender = 'Gênero'
+    online_time = 'Tempo Online'
     
-    def read_files(self):
-        files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/sales/*.*"
-
-        files = glob.glob(files_path)
-        print((str)(len(files)) + " files were loaded")
-        return files
-    
-    def appendFiles(self, files):
-        df = pd.DataFrame() # New Dataframe
-
-        for path in files: # Loop
-            sheet = pd.read_excel(path) # Read File
-            df = df.append(sheet, ignore_index=True) # Append in the large Dataframe
-        return df
-    
-    def selectColumns(self, df, columns): 
-        return df[columns]
-
-
-    def removeNA(self, df):
-        return df.dropna() # Remove all not a number
-
-
     def removeAgeInconsistencies(self, df):
         df = df[df['Idade'] != 'Anos'] # Remove undefined 'Idade'
-
-        for index, row in df.iterrows(): # Remove suffix 'Anos' and transform to number
-            df.loc[index, 'Idade'] = int(row['Idade'].split(' ')[0])
-
-            df = df[df['Idade'] < 100] # Remove anomalies 'Idade' more than 100 years
+        df['Idade'] =  df['Idade'].str.replace(' Anos', '').astype('int64')
+        df = df[df['Idade'] < 100]
 
         return df
 
 
     def removeGenderIncosistencies(self, df):
-        df = df[df['Gênero'] != 'Gênero não informado'] # Remove undefined 'Gênero não informado'
+        df = df[df[self.gender] != 'Gênero não informado'] # Remove undefined 'Gênero não informado'
 
         return df
+# Data Login,Data Logout
 
+    def convertDate(self, df, col = data_login):
+        date_format = '%d/%m/%Y %H:%M:%S'
+        for index, row in df.iterrows():
+            # trocar pro import datetime porque o pandas.datetime vai ser deprecated no futuro
+            df.loc[index, self.data_login] = pd.datetime.strftime(df.loc[index,self.data_login], date_format)
+        # df = df.sort_values(by=self.data_login, key=lambda value: pd.to_datetime(value, format=date_format))
+        # df.rename(columns={col: 'Data'}, inplace = True)
+        # df.insert(1, 'Hora', -1)
+        # df.insert(1, 'Dia', -1)
 
-    def convertDate(self, df, col = 'Data Login'):
-
-        week = ["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"]
-
-        df = df.sort_values(by='Data Login', key=lambda value: pd.to_datetime(value, format='%d/%m/%Y %H:%M:%S'))
-
-        df.rename(columns={col: 'Data'}, inplace = True)
-        df.insert(1, 'Hora', -1)
-        df.insert(1, 'Dia', -1)
-
-        for index, row in tqdm(df.iterrows(), total=df.shape[0]):
-            df.loc[index, 'Data'] = dt.datetime.strptime(row['Data'],'%d/%m/%Y %H:%M:%S').strftime('%d/%m/%Y')
-            df.loc[index, 'Dia'] = week[dt.datetime.strptime(row['Data'],'%d/%m/%Y %H:%M:%S').weekday()]
-            df.loc[index, 'Hora'] = dt.datetime.strptime(row['Data'],'%d/%m/%Y %H:%M:%S').hour
-            df.loc[index, 'Tempo Online'] = self.getStandardizeTime(row['Tempo Online'])
+        # for index, row in tqdm(df.iterrows(), total=df.shape[0]):
+        #     df.loc[index, 'Data'] = dt.datetime.strptime(row['Data'],'%d/%m/%Y %H:%M:%S').strftime('%d/%m/%Y')
+        #     df.loc[index, 'Dia'] = preprocessing_utils.WEEK[dt.datetime.strptime(row['Data'],'%d/%m/%Y %H:%M:%S').weekday()]
+        #     df.loc[index, 'Hora'] = dt.datetime.strptime(row['Data'],'%d/%m/%Y %H:%M:%S').hour
+        #     df.loc[index, self.online_time] = self.getStandardizeTime(row[self.online_time])
 
         return df
 
@@ -111,17 +88,17 @@ class PreprocessingWifi(Resource):
 
                 baseItem = itens.iloc[0] # get the baseline item
                 
-                totalTime = dt.datetime.strptime(baseItem['Tempo Online'], '%H:%M:%S') # get the baseline time
+                totalTime = dt.datetime.strptime(baseItem[self.online_time], '%H:%M:%S') # get the baseline time
 
                 itens = itens.iloc[1:] # remove the first row
                 
                 for index, item in itens.iterrows(): # iterate by others rows
             
-                    totalTime = (totalTime - dt.datetime.strptime('00:00:00', '%H:%M:%S') + dt.datetime.strptime(item['Tempo Online'], '%H:%M:%S')) # sum all time 
+                    totalTime = (totalTime - dt.datetime.strptime('00:00:00', '%H:%M:%S') + dt.datetime.strptime(item[self.online_time], '%H:%M:%S')) # sum all time 
 
                     df.loc[index,'index'] = -1 # set row as deprecated
                 
-                baseItem['Tempo Online'] = totalTime.strftime('%H:%M:%S') # set a sum of time
+                baseItem[self.online_time] = totalTime.strftime('%H:%M:%S') # set a sum of time
                 
                 df.iloc[baseItem.name] = baseItem # update a baseline element in original dataset
 
@@ -136,47 +113,41 @@ class PreprocessingWifi(Resource):
     
     def DatetimeToSeconds(self, df):
         for index, row in df.iterrows():
-            t = dt.datetime.strptime(row['Tempo Online'], '%H:%M:%S')
-            df.loc[index, 'Tempo Online'] = int(dt.timedelta(hours=t.hour, minutes=t.minute, seconds=t.second).total_seconds())
+            t = dt.datetime.strptime(row[self.online_time], '%H:%M:%S')
+            df.loc[index, self.online_time] = int(dt.timedelta(hours=t.hour, minutes=t.minute, seconds=t.second).total_seconds())
         
         return df
 
     def binarizeGender(self, df):
-        df.loc[df['Gênero'] == 'Feminino', 'Gênero'] = 0 
-        df.loc[df['Gênero'] == 'Masculino', 'Gênero'] = 1
+        df.loc[df[self.gender] == 'Feminino', self.gender] = 0 
+        df.loc[df[self.gender] == 'Masculino', self.gender] = 1
         return df
     
     # @jwt_required
     def post(self):
         try:
             # @TODO: Implementar aqui função de salvar o arquivo igual ao PrePRocessing.py
-            files = self.read_files()
-            df = self.appendFiles(files)
-            df = self.selectColumns(df, ['Data Login', 'Gênero', 'Idade', 'Tempo Online', 'Mac Address'])
-            df = self.removeNA(df)
-            df = self.removeAgeInconsistencies(df)
-            df = self.removeGenderIncosistencies(df)
-            df = self.convertDate(df, 'Data Login')
-            df = self.sumTimeOfRepeatedRows(df)
+            files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/wifi/*.*"
+            files = preprocessing_utils.read_files(files_path)
+            df = preprocessing_utils.append_files(files)
+            # columns_to_select = [self.data_login, self.gender, 'Idade', self.online_time, 'Mac Address']
+            # df = preprocessing_utils.select_columns(df, columns_to_select)
+            # df = preprocessing_utils.remove_na(df)
+            # df = self.removeAgeInconsistencies(df)
+            # df = self.removeGenderIncosistencies(df)
+            df = self.convertDate(df, self.data_login)
+            # df = self.sumTimeOfRepeatedRows(df)
             
-            df = self.DatetimeToSeconds(df)
-            df1 = self.df.copy()
-            df = self.binarizeGender(df)
-            
-            # salvar esses arquivos aqui, e retornar um objeto com os dois
-            # df1.to_excel('Wifi_dataset_with_gender.xlsx', index=False)
-            # df.to_excel('Wifi_dataset.xlsx', index=False)
-
-            df1 = df1.to_json()
-            df = df.to_json()
-            return_object = {
-                'wifiWithGender': df1, 
-                'wifiWithoutGender': df
-            }
-
+            # df = self.DatetimeToSeconds(df)
+            # df1 = self.df.copy()
+            # path1 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/Wifi_dataset_with_gender.csv"
+            # preprocessing_utils.save_file(df1, path1)
+            path2 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/Wifi_dataset.csv"
+            # df = self.binarizeGender(df)
+            preprocessing_utils.save_file(df, path2)
 
             # @TODO: Implementar aqui função de salvar o arquivo igual ao PrePRocessing.py
-            return return_object
+            return 'ok'
         except:
             traceback.print_exc()
             return None, 500
