@@ -18,7 +18,7 @@ def read_files(files_path):
 def append_files(files):
     df = pd.DataFrame()
     for path in files:
-        sheet = pd.read_excel(path)
+        sheet = pd.read_excel(path, engine='openpyxl')
         df = df.append(sheet, ignore_index=True)
     return df
 

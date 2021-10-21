@@ -15,24 +15,16 @@ from utils import preprocessing_utils
 # https://github.com/geovanneoliveira/LVF-pipeline/blob/main/data%20processing/0%20-%20Data%20Processing%20Sales.ipynb
 
 class PreprocessingSales(Resource):
-    
-    def read_files(self):
-        files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/sales/*.*"
-        files = glob.glob(files_path)
-        print((str)(len(files)) + " files were loaded")
-        return files
-        
-    def appendFiles(self, files):
+      
+    def append_files(self, files):
         df = pd.DataFrame()
-
-        for path in files: # Loop
-            sheet = pd.read_excel(path) # Read File
-            storeName = path.split("-")[1]  # Get file name
-            sheet.insert(1, "Name", storeName) # Add new column with store name
-            df = df.append(sheet, ignore_index=True) # Append in the large Dataframe
-
+        for path in files:
+            sheet = pd.read_excel(path, engine='openpyxl')
+            store_name = path.split("-")[1]  # Get file name
+            sheet.insert(1, "Name", store_name) # Add new column with store name
+            df = df.append(sheet, ignore_index=True)
         return df
-    
+
     def selectColumns(self, df, columns): 
         return df[columns] # Select columns 
 
@@ -40,12 +32,10 @@ class PreprocessingSales(Resource):
     def removeNA(self, df):
         return df.dropna() # Remove all not a number
 
-
     def convertDate(self, df, col = 'Date'):
-
-        week = ["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"]
-
-        df = df.sort_values(by=col, key=lambda value: pd.to_datetime(value, format='%d/%m/%Y %H:%M'))
+        date_format = '%Y/%m/%d %H:%M:%S'
+        date_std_format = '%d/%m/%Y'
+        df = df.sort_values(by=col, key=lambda value: pd.to_datetime(value, format=date_format))
 
         df.insert(0, 'Data', df[col])
         df.insert(1, 'Hora', -1)
@@ -53,14 +43,13 @@ class PreprocessingSales(Resource):
         df.drop(columns=col, inplace = True)
 
         for index, row in tqdm(df.iterrows(), total=df.shape[0]):
-            df.loc[index, 'Data'] = dt.datetime.strptime(row['Data'],'%d/%m/%Y %H:%M').strftime('%d/%m/%Y')
-            df.loc[index, 'Dia'] = week[dt.datetime.strptime(row['Data'],'%d/%m/%Y %H:%M').weekday()]
-            df.loc[index, 'Hora'] = dt.datetime.strptime(row['Data'],'%d/%m/%Y %H:%M').hour
+            df.loc[index, 'Data'] = row['Data'].strftime(date_std_format)
+            df.loc[index, 'Dia'] = preprocessing_utils.WEEK[row['Data'].weekday()]
+            df.loc[index, 'Hora'] = row['Data'].hour
 
         return df
 
     def generateTickets(self, df):
-
         res = pd.DataFrame(columns=['Data', 'Dia', 'Hora', 'Loja', 'Quantidade de Tickets', 'Ticket Médio'])
 
         df.reset_index(inplace=True, drop=True) # reset index
@@ -92,19 +81,18 @@ class PreprocessingSales(Resource):
     # @jwt_required
     def post(self):
         try:
-            # @TODO: Implementar aqui função de salvar o arquivo igual ao PrePRocessing.py
-            files = self.read_files()
-            df = self.appendFiles(files)
+            files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/sales/*.*"
+            files = preprocessing_utils.read_files(files_path)
+            df = self.append_files(files)
             df = self.selectColumns(df, ['Name', 'Total', 'Date'])
             df = self.removeNA(df)
             df = self.convertDate(df, 'Date')
             df = self.generateTickets(df)
+            
+            path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/sales_dataset.xlsx"
+            preprocessing_utils.save_file(df, path)
 
-            # @TODO: Implementar aqui função de salvar o arquivo igual ao PrePRocessing.py
-            # salver um arquivo sales_dataset.xlsx
-            df = df.to_json()
-
-            return df
+            return 'ok'
         except:
             traceback.print_exc()
             return None, 500

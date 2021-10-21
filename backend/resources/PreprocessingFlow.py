@@ -54,9 +54,6 @@ class PreprocessingFlow(Resource):
             df = preprocessing_utils.remove_na(df)
             df = preprocessing_utils.rename_col(df, 'value', 'Quantidade de Entradas')
             df = self.convertDate(df, 'key')
-
-            # @TODO: Implementar aqui função de salvar o arquivo igual ao PrePRocessing.py
-            # salvar um arquivo flow_dataset.xlsx
             path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/flow_dataset.csv"
             preprocessing_utils.save_file(df, path)
             json = df.to_json()
