@@ -28,19 +28,15 @@ class PreprocessingAll(Resource):
     }
     
     def read_files(self):
-
-        dir_wifi = f"{current_app.config.get('PRE_PROCESSING_RAW')}/Wifi_dataset.xlsx"
-        dir_sales = f"{current_app.config.get('PRE_PROCESSING_RAW')}/sales_dataset.xlsx"
-        dir_flow = f"{current_app.config.get('PRE_PROCESSING_RAW')}/flow_dataset.xlsx"
+        dir_wifi = f"{current_app.config.get('PRE_PROCESSING_RAW')}/Wifi_dataset.csv"
+        dir_sales = f"{current_app.config.get('PRE_PROCESSING_RAW')}/sales_dataset.csv"
+        dir_flow = f"{current_app.config.get('PRE_PROCESSING_RAW')}/flow_dataset.csv"
         dir_segments = f"{current_app.config.get('PRE_PROCESSING_RAW')}/segmentos.csv"
 
         return dir_wifi, dir_sales, dir_flow, dir_segments
     
     def openCsvFile(self, dir):
         return pd.read_csv(dir, sep=';', encoding = "ISO-8859-1")
-
-    def openDataframe(self, dir):
-        return pd.read_excel(dir)
     
     def concatFlowAndWifi(self, dfF, dfW):
         res = pd.DataFrame(columns=['Data', 'Dia', 'Hora', 'Quantidade de Entradas', 'Gênero', 'Idade', 'Tempo Online']) #new dataframe
@@ -318,9 +314,9 @@ class PreprocessingAll(Resource):
         try:
             # @TODO: Implementar aqui função de salvar o arquivo igual ao PrePRocessing.py
             dir_wifi, dir_sales, dir_flow, dir_segments = self.read_files()
-            dfWifi = self.openDataframe(dir_wifi)
-            dfSales = self.openDataframe(dir_sales)
-            dfFlow = self.openDataframe(dir_flow)
+            dfWifi = self.openCsvFile(dir_wifi)
+            dfSales = self.openCsvFile(dir_sales)
+            dfFlow = self.openCsvFile(dir_flow)
             seg = self.openCsvFile(dir_segments)
 
 

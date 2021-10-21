@@ -89,7 +89,7 @@ class PreprocessingSales(Resource):
             df = self.convertDate(df, 'Date')
             df = self.generateTickets(df)
             
-            path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/sales_dataset.xlsx"
+            path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/sales_dataset.csv"
             preprocessing_utils.save_file(df, path)
 
             return 'ok'
