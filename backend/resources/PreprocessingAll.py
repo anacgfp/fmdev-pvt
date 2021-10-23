@@ -72,7 +72,7 @@ class PreprocessingAll(Resource):
         total = days.shape[0] # count uniques days
         for date in tqdm(days, total=total): # iterate all days from data
             for hour in range(0, 24): # iterate each hour
-                aux = dfFW[ (dfFW['Data'] == date) & (dfFW['Hora'] == hour)] # aux to populate fields
+                aux = dfFW[(dfFW['Data'] == date) & (dfFW['Hora'] == hour)] # aux to populate fields
                 tmp = dfS[ (dfS['Data'] == date) & (dfS['Hora'] == hour) ] # temporary set filtered
                 if tmp.empty: # check if there some element into dataframe
                     res = res.append({ 
@@ -105,7 +105,7 @@ class PreprocessingAll(Resource):
 
         res = pd.DataFrame(columns=['Data', 'Dia', 'Hora', 'Quantidade de Entradas', 'Gênero', 'Idade', 'Tempo Online']) #new dataframe
 
-        # res['Data'], res['Dia'], res['Hora'], res['Quantidade de Entradas'] = df['Data'], df['Dia'], df['Hora'], df['Quantidade de Entradas'] # get values from baseline
+        res['Data'], res['Dia'], res['Hora'], res['Quantidade de Entradas'] = df['Data'], df['Dia'], df['Hora'], df['Quantidade de Entradas'] # get values from baseline
 
         days = df['Data'].unique() # All days uniques
 
@@ -183,11 +183,11 @@ class PreprocessingAll(Resource):
         y_kmeans = kmeans.predict(X) # predict
 
         plt.scatter(X[col1], X[col2], c=y_kmeans, s=50, cmap='viridis') # Plot Graph
-        plt.savefig('kmeansClustering' + n_clusters + col1 + col2 + '.png')
+        plt.savefig(f"{current_app.config.get('PRE_PROCESSING_RAW')}/imgs/kmeansClustering-{n_clusters}-{col1}-{col2}.png")
 
         centers = kmeans.cluster_centers_
         plt.scatter(centers[:, 0], centers[:, 1], c='black', s=200 , alpha=0.5) # Plot centers
-        plt.savefig('kmeansClustering' + n_clusters + col1 + col2 + 'centers' + '.png')
+        plt.savefig(f"{current_app.config.get('PRE_PROCESSING_RAW')}/imgs/kmeansClustering-{n_clusters}-{col1}-{col2}-centers.png")
 
         return y_kmeans
     
@@ -295,9 +295,9 @@ class PreprocessingAll(Resource):
             df.loc[index,'Dia'] = week[row['Dia']]
 
         return df
+    
     def mergeAllDf(self, dictionaries):
         df = {}
-
         for dictionary in dictionaries:
             for idx in dictionary:
                 df[idx] = dictionary[idx]
@@ -314,11 +314,10 @@ class PreprocessingAll(Resource):
         try:
             # @TODO: Implementar aqui função de salvar o arquivo igual ao PrePRocessing.py
             dir_wifi, dir_sales, dir_flow, dir_segments = self.read_files()
-            dfWifi = self.openCsvFile(dir_wifi)
-            dfSales = self.openCsvFile(dir_sales)
-            dfFlow = self.openCsvFile(dir_flow)
+            dfWifi = pd.read_csv(dir_wifi)
+            dfSales = pd.read_csv(dir_sales)
+            dfFlow = pd.read_csv(dir_flow)
             seg = self.openCsvFile(dir_segments)
-
 
             dfFW = self.concatFlowAndWifi(dfFlow, dfWifi)
             df = self.concatFWAndSales(dfFW, dfSales)
@@ -327,8 +326,9 @@ class PreprocessingAll(Resource):
             df = self.calculeTotalofNextHour(df)
 
             df = self.calculeTotalofHour(df)
+
             df.boxplot(['Total'])
-            plt.savefig('boxplot_total.png')
+            plt.savefig(f"{current_app.config.get('PRE_PROCESSING_RAW')}/imgs/boxplot_total.png")
             y_kmeans = self.kmeansClustering(2, 'Hora', 'Total', df)
             # remove outliers class from dataframe
             for index, row in df.iterrows():
@@ -337,13 +337,14 @@ class PreprocessingAll(Resource):
 
             df.reset_index(drop=True, inplace=True)
             df.boxplot(['Total'])
-            plt.savefig('boxplot_total_without_outliers.png')
+            plt.savefig(f"{current_app.config.get('PRE_PROCESSING_RAW')}/imgs/boxplot_total_without_outliers.png")
             dfFilter = self.filterHour(df,9,22)
             dfFilter.reset_index(drop=True, inplace=True)
             dfHour = self.updateTarget(dfFilter.copy())
             dfDay = self.transformToDay(dfFilter.copy())
             dfDay = self.updateTarget(dfDay)
             segHour = self.generateSegmentsDatasets(seg, dfHour, 7, self.seg_names_hour)
+
             for idx in self.seg_names_hour:
                 segHour[self.seg_names_hour[idx]] = self.updateTarget(segHour[self.seg_names_hour[idx]])
             segDay = self.generateSegmentsDatasets(seg, dfDay, 6, self.seg_names_day)
@@ -354,10 +355,8 @@ class PreprocessingAll(Resource):
                 df[idx] = self.finalizeProcessing(df[idx], idx)
                 
             for idx in df:
-                df[idx].to_excel(idx + '.xlsx', index=False)
-
-            # @TODO: Implementar aqui função de salvar o arquivo igual ao PrePRocessing.py
-            return "a"
+                df[idx].to_excel(f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/{idx}.xlsx", index=False)
+            return 'json'
         except:
             traceback.print_exc()
             return None, 500
