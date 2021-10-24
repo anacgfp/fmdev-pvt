@@ -2,18 +2,14 @@ import traceback
 from flask import request, current_app
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required
-import json
 from tabulate import tabulate
 from tqdm import tqdm
 import datetime as dt
 import pandas as pd
-import glob
-import uuid
 import matplotlib.pyplot as plt
 import seaborn as sns; sns.set()  # for plot styling
 import numpy as np
 from sklearn.cluster import KMeans
-import collections
 from utils import preprocessing_utils
 
 
@@ -356,7 +352,7 @@ class PreprocessingAll(Resource):
                 
             for idx in df:
                 df[idx].to_excel(f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/{idx}.xlsx", index=False)
-            return 'json'
+            return 'ok'
         except:
             traceback.print_exc()
             return None, 500
