@@ -2,6 +2,7 @@ import traceback
 import numpy as np
 import pandas as pd
 from utils import preprocessing_utils
+from flask import jsonify
 from flask_restful import Resource
 from flask import request, current_app
 from flask_jwt_extended import jwt_required
@@ -26,20 +27,20 @@ warnings.filterwarnings("ignore")
 
 class Train(Resource):
     def read_paths(self):
-        dia = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia.xlsx"
-        hora = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora.xlsx"
-        d1 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Alimentação.xlsx"
-        d2 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Âncoras.xlsx"
-        d3 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Artigos Diversos.xlsx"
-        d4 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Artigos do Lar.xlsx" 
-        d5 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Serviços.xlsx" 
-        d6 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Vestuário.xlsx" 
-        h1 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Alimentação.xlsx"
-        h2 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Âncoras.xlsx"
-        h3 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Artigos Diversos.xlsx" 
-        h4 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Artigos do Lar.xlsx" 
-        h5 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Serviços.xlsx" 
-        h6 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Vestuário.xlsx" 
+        dia = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia.csv"
+        hora = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora.csv"
+        d1 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Alimentação.csv"
+        d2 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Âncoras.csv"
+        d3 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Artigos Diversos.csv"
+        d4 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Artigos do Lar.csv" 
+        d5 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Serviços.csv" 
+        d6 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Vestuário.csv" 
+        h1 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Alimentação.csv"
+        h2 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Âncoras.csv"
+        h3 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Artigos Diversos.csv" 
+        h4 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Artigos do Lar.csv" 
+        h5 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Serviços.csv" 
+        h6 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Vestuário.csv" 
         return dia, hora, d1, d2, d3, d4, d5, d6, h1, h2, h3, h4, h5, h6
 
     def featureSelection(self, df, TARGET_NAME, fee = 0.30):
@@ -55,7 +56,7 @@ class Train(Resource):
 
         return df
 
-    def creatingModel(self, train):    
+    def creatingModel(self, train, TARGET_NAME, TRAIN_SIZE, FEATURES_NAME):    
         # Using 70% train and 30% validate
         cls = setup(data= train,
                     target=TARGET_NAME,
@@ -67,19 +68,19 @@ class Train(Resource):
                     silent=True)
         return cls
     
-    def tuningModels(self, models_trained):
+    def tuningModels(self, models_trained, METRIC_TRAIN):
 
         models = pd.DataFrame(columns=['initials','name','model','score'])
 
         for model in models_trained.itertuples():
-            tuned = tune_model(model.model, optimize = METRIC_TRAIN, n_iter=30, verbose= True )
+            tuned = self.tune_model(model.model, optimize = METRIC_TRAIN, n_iter=30, verbose= True )
             models.loc[models.shape[0]] = [ model.initials, model.name, tuned, pull()[METRIC_TRAIN].Mean ]
             
         models.sort_values(by=['score'], ascending=False, inplace=True, ignore_index=True)
         return models
 
 
-    def trainingModels(self):
+    def trainingModels(self, METRIC_TRAIN, THRESHOLD):
 
         models_list = compare_models(sort=METRIC_TRAIN, n_select=13)
         # Select N Best Models
@@ -88,12 +89,13 @@ class Train(Resource):
 
         for (index, line), model in zip(table.iterrows(), models_list):
             if line[METRIC_TRAIN] > THRESHOLD:
+                print('aaaa')
                 models_trained.loc[models_trained.shape[0]] = [ index, line.Model, model, line[METRIC_TRAIN] ]
 
         return models_trained
     
 
-    def wilcoxonTest(self, train, models, p_limit=0.05):
+    def wilcoxonTest(self, train, models, TARGET_NAME, METRIC_WILCOXON, p_limit=0.05):
         # Get Train Data
 
         X_train = train.drop([TARGET_NAME], axis=1)
@@ -139,7 +141,7 @@ class Train(Resource):
             result[feature_name] = (df[feature_name] - min_value) / ((max_value - min_value) if not (max_value - min_value) == 0 else 1)
         return result
     
-    def testingModels(self, models, test, dir):
+    def testingModels(self, models, test, dir, TARGET_NAME):
         # Get Test Data
         test_normalized = self.normalize(test, TARGET_NAME)
 
@@ -183,17 +185,22 @@ class Train(Resource):
         return test_metrics
 
 
-    def saveList(self, L, dir):
-        with open(dir+'Features.txt', 'w') as f:
+    def saveList(self, L, dir_):
+        with open(dir_+'Features.txt', 'w') as f:
             for item in L:
                 f.writelines(str(item)+'\n')
             f.close()
 
 
-    @jwt_required
+    # @jwt_required
     def post(self):
         try:
             dia, hora, d1, d2, d3, d4, d5, d6, h1, h2, h3, h4, h5, h6 = self.read_paths()
+            dic = { 
+                'dataset' : [dia.split('.')[0], hora.split('.')[0]],
+                'feature' : ['ALL', 'FS'],
+                'target' : ['Total (T+1)','Total (T+2)','Total (T+3)']
+            }
             dia = pd.read_csv(dia)
             hora = pd.read_csv(hora)
             d1 = pd.read_csv(d1)
@@ -209,11 +216,7 @@ class Train(Resource):
             h5 = pd.read_csv(h5)
             h6 = pd.read_csv(h6)
             
-            dic = { 
-                'dataset' : [dia.split('.')[0], hora.split('.')[0]],
-                'feature' : ['ALL', 'FS'],
-                'target' : ['Total (T+1)','Total (T+2)','Total (T+3)']
-            }
+
             PARAMS = it.product(*(dic[idx] for idx in dic))
             # Declaration of Constants
             TARGETS = ['Total (T+1)','Total (T+2)','Total (T+3)']
@@ -223,45 +226,48 @@ class Train(Resource):
             METRIC_WILCOXON = 'f1_weighted'
             THRESHOLD = 0.6
             
+            lista = []
             # Execute
             a = []
             for param in PARAMS:
-
                 # Get params
                 df = pd.read_csv(param[0]+'.csv')
                 TARGET_NAME = param[2]
                 df.drop(columns=[x for x in TARGETS if x != TARGET_NAME], axis=1, inplace=True)
                 FEATURES_NAME = list(df.columns.difference([TARGET_NAME]))
-                dir_ = 'Experimentos/{0}/{1}/{2}/'.format(param[0], param[1], param[2])
-                os.makedirs(dir_)
-
+                type_time = param[0].split('/')[-1]
+                dir_ = f"{current_app.config.get('TRAIN_MODELS')}/Experimentos/{type_time}/{param[1]}/{param[2]}/"
+                try:
+                    os.makedirs(dir_)
+                except:
+                    continue
 
                 # Init Modeling
                 if param[1] == 'FS':
                     df = self.featureSelection(df, TARGET_NAME)
                     FEATURES_NAME = list(df.columns.difference([TARGET_NAME]))
-                    self.saveList(FEATURES_NAME, dir)
+                    self.saveList(FEATURES_NAME, dir_)
 
                 train, test = train_test_split(df, test_size=TEST_SIZE, random_state=42)
+                try :
+                    cls = self.creatingModel(train, TARGET_NAME, TRAIN_SIZE, FEATURES_NAME)
 
-            try :
-                cls = self.creatingModel(train)
+                    models_trained = self.trainingModels(METRIC_TRAIN, THRESHOLD)
+                    lista.append(models_trained.shape)
+                    # models_trained.to_excel(dir_+'trained.xlsx', index=False)
 
-                models_trained = self.trainingModels()
-                models_trained.to_excel(dir+'trained.xlsx', index=False)
+                    # models_tuned = self.tuningModels(models_trained, METRIC_TRAIN)
+                    # models_tuned.to_excel(dir_+'tuned.xlsx', index=False)
 
-                models_tuned = self.tuningModels(models_trained)
-                models_tuned.to_excel(dir+'tuned.xlsx', index=False)
+                    # models_hyp = self.wilcoxonTest(train, models_tuned, TARGET_NAME, METRIC_WILCOXON)
+                    # models_hyp.to_excel(dir_+'hypothesis.xlsx', index=False)
 
-                models_hyp = self.wilcoxonTest(train, models_tuned)
-                models_hyp.to_excel(dir+'hypothesis.xlsx', index=False)
+                    # results = self.testingModels(models_hyp, test, dir_, TARGET_NAME)
+                    # results.to_excel(dir_+'results.xlsx', index=True)
+                except Exception as _ :
+                    print('Error')
 
-                results = self.testingModels(models_hyp, test, dir)
-                results.to_excel(dir+'results.xlsx', index=True)
-            except Exception as _ :
-                print('Error')
-
-            return 'a'
+            return jsonify(lista)
         except:
             traceback.print_exc()
             return {"msg": "Error on POST Train"}, 500

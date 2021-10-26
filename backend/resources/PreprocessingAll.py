@@ -351,7 +351,7 @@ class PreprocessingAll(Resource):
                 df[idx] = self.finalizeProcessing(df[idx], idx)
                 
             for idx in df:
-                df[idx].to_excel(f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/{idx}.xlsx", index=False)
+                df[idx].to_csv(f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/{idx}.csv", index=False)
             return 'ok'
         except:
             traceback.print_exc()
