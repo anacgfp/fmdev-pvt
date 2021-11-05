@@ -14,13 +14,12 @@ import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import Typography from '@material-ui/core/Typography';
 import Chip from '@material-ui/core/Chip';
-import MonitorIcon from 'react-feather/dist/icons/monitor';
 import EditIcon from 'react-feather/dist/icons/settings';
 import DeleteIcon from 'react-feather/dist/icons/trash-2';
 import PlayIcon from 'react-feather/dist/icons/play';
 import FileIcon from 'react-feather/dist/icons/file';
 import MoodleConfigDialog from '../MoodleConfigDialog';
-import { INDICATORS, ADD_TRAIN, LMS, CSV } from '../../constants';
+import { INDICATORS, ADD_TRAIN, LMS, CSV, FLOW, WIFI, SALES } from '../../constants';
 import { Creators as ScreenActions } from '../../store/ducks/screen';
 import { Creators as IndicatorActions } from '../../store/ducks/indicator';
 import DataSourceDialog from '../DataSourceDialog';
@@ -138,18 +137,26 @@ class DataSource extends Component {
       <div style={{ display: 'flex', paddingLeft: '2rem' }}>
         <div>
           <Chip
-            avatar={<MonitorIcon size={16} color={chipSelected === LMS ? '#FFF' : primaryColor} />}
-            label="Ambientes EAD"
-            className={chipSelected === LMS ? 'active-chip' : 'inactive-chip'}
-            onClick={this.setChip.bind(this, LMS)}
+            avatar={<FileIcon size={16} color={chipSelected === FLOW ? '#FFF' : primaryColor} />}
+            label="Dados de Fluxo"
+            className={chipSelected === FLOW ? 'active-chip' : 'inactive-chip'}
+            onClick={this.setChip.bind(this, FLOW)}
           />
         </div>
         <div style={{ paddingLeft: '.5vw' }}>
           <Chip
-            avatar={<FileIcon size={16} color={chipSelected === CSV ? '#FFF' : primaryColor} />}
-            label="Arquivos CSV"
-            className={chipSelected === CSV ? 'active-chip' : 'inactive-chip'}
-            onClick={this.setChip.bind(this, CSV)}
+            avatar={<FileIcon size={16} color={chipSelected === WIFI ? '#FFF' : primaryColor} />}
+            label="Dados de Wifi"
+            className={chipSelected === WIFI ? 'active-chip' : 'inactive-chip'}
+            onClick={this.setChip.bind(this, WIFI)}
+          />
+        </div>
+        <div style={{ paddingLeft: '.5vw' }}>
+          <Chip
+            avatar={<FileIcon size={16} color={chipSelected === SALES ? '#FFF' : primaryColor} />}
+            label="Dados de Vendas"
+            className={chipSelected === SALES ? 'active-chip' : 'inactive-chip'}
+            onClick={this.setChip.bind(this, SALES)}
           />
         </div>
       </div>

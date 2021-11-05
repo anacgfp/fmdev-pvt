@@ -11,13 +11,16 @@ from utils.utils import get_extension_from_path, delete_file
 
 class File(Resource):
 
-    ALLOWED_EXTENSIONS = {'csv'}
+    ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'json'}
+    
+    def sanitize_filename(self, filename):
+        return filename.replace(' ', '').replace('_', '')
 
     def allowed_file(self, filename):
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in self.ALLOWED_EXTENSIONS
     
-    def get_file_size(self, upload_folder, file_id):
-        file_length = os.stat(f"{upload_folder}/{file_id}").st_size
+    def get_file_size(self, upload_folder, filename):
+        file_length = os.stat(f"{upload_folder}/{filename}").st_size
         
         return file_length
     
@@ -47,14 +50,15 @@ class File(Resource):
         try:
             if 'file' not in request.files:
                 return {'msg': 'No file part'}, 500
-
             file = request.files['file']
+            typeOfData = request.args.get('typeOfData')
+            print('asds', typeOfData)
+            file.filename = self.sanitize_filename(file.filename)
             extension = get_extension_from_path(file.filename)
-            upload_folder = current_app.config.get('UPLOAD_FOLDER')
+            upload_folder = f"{current_app.config.get('PRE_PROCESSING_RAW')}/{typeOfData}"
             file_id = f"{str(uuid.uuid4())}{extension}"
-
             if file and self.allowed_file(file.filename):
-                file.save(os.path.join(upload_folder, file_id))
+                file.save(os.path.join(upload_folder, file.filename))
             else:
                 return {'msg': 'Extension file invalid'}, 500
             
@@ -62,8 +66,8 @@ class File(Resource):
                 'id': file_id,
                 'filename': file.filename,
                 'extension': extension.replace('.', ''),
-                'size': self.get_file_size(upload_folder, file_id),
-                'url': f"{upload_folder}/{file_id}"
+                'size': self.get_file_size(upload_folder, file.filename),
+                'url': f"{upload_folder}/{file.filename}"
             }
 
             model = self.insert_on_database(data)
@@ -77,7 +81,7 @@ class File(Resource):
     def delete(self, key):
         try:
             file = FileModel.query.filter_by(id=key).first()
-            path = f"{current_app.config.get('UPLOAD_FOLDER')}/{file.file_id}"
+            path = f"{current_app.config.get('UPLOAD_FOLDER')}/{file.filename}"
             delete_file(path)
             
             db.session.delete(file)

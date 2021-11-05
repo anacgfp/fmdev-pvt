@@ -9,3 +9,6 @@ export const TRAIN_PIPELINES = 'TRAIN_PIPELINES';
 export const LMS = 'LMS';
 export const CSV = 'CSV';
 export const LAD = 'LAD';
+export const WIFI = 'WIFI';
+export const FLOW = 'FLOW';
+export const SALES = 'SALES';

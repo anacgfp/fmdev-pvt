@@ -8,8 +8,7 @@ import { Creators as AuthActions } from '../../store/ducks/auth';
 import { Creators as ScreenActions } from '../../store/ducks/screen';
 import AddIcon from 'react-feather/dist/icons/plus-circle';
 import TranModelIcon from 'react-feather/dist/icons/package';
-import MonitorIcon from 'react-feather/dist/icons/monitor';
-import { DATASOURCE, TRAIN_MODEL, ADD_TRAIN, LAD } from '../../constants';
+import { DATASOURCE, TRAIN_MODEL, ADD_TRAIN } from '../../constants';
 
 class SideMenu extends Component {
 
@@ -27,11 +26,6 @@ class SideMenu extends Component {
 
     const { signOutRequest } = this.props;
     const links = [
-      {
-        screen: LAD,
-        component: LAD,
-        icon: <MonitorIcon color={'#FFF'} strokeWidth={this.getStrokeWidth(LAD)} />
-      },
       {
         screen: ADD_TRAIN,
         component: DATASOURCE,

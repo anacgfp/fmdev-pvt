@@ -8,17 +8,10 @@ from tqdm import tqdm
 import datetime as dt
 import pandas as pd
 from utils import preprocessing_utils
-
-
-# https://github.com/geovanneoliveira/LVF-pipeline/blob/main/data%20processing/0%20-%20Data%20Processing%20Flow.ipynb
-
 class PreprocessingFlow(Resource): 
 
-    def importjson(self):
-        # @TODO tornar mais genérico
-        file = f"{current_app.config.get('PRE_PROCESSING_RAW')}/Fluxo_de_Entradas-XYZ-KWQ.json"
-
-        with open(file) as jsonFile:
+    def import_json(self, path):
+        with open(path) as jsonFile:
             json_object = json.load(jsonFile)
             jsonFile.close()
 
@@ -49,7 +42,9 @@ class PreprocessingFlow(Resource):
     # @jwt_required
     def post(self):
         try:
-            df = self.importjson()
+            files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/flow/*.*"
+            files = preprocessing_utils.read_files(files_path)
+            df = self.import_json(files[0])
 
             df = preprocessing_utils.remove_na(df)
             df = preprocessing_utils.rename_col(df, 'value', 'Quantidade de Entradas')

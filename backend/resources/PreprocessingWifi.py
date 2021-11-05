@@ -29,19 +29,17 @@ class PreprocessingWifi(Resource):
         return df
 
     def convertDate(self, df, col = data_login):
-        date_format = '%Y/%m/%d %H:%M:%S'
+        df = df.sort_values(by='Data Login', key=lambda value: pd.to_datetime(value, format='%d/%m/%Y %H:%M:%S'))
 
-        df = df.sort_values(by=self.data_login, key=lambda value: pd.to_datetime(value, format=date_format))
         df.rename(columns={col: 'Data'}, inplace = True)
         df.insert(1, 'Hora', -1)
         df.insert(1, 'Dia', -1)
-        date_std_format = '%d/%m/%Y'
-        for index, row in tqdm(df.iterrows(), total=df.shape[0]):
-            df.loc[index, 'Data'] = row['Data'].strftime(date_std_format)
-            df.loc[index, 'Dia'] = preprocessing_utils.WEEK[row['Data'].weekday()]
-            df.loc[index, 'Hora'] = row['Data'].hour
-            df.loc[index, self.online_time] = self.getStandardizeTime(row[self.online_time])
 
+        for index, row in tqdm(df.iterrows(), total=df.shape[0]):
+            df.loc[index, 'Data'] = dt.datetime.strptime(row['Data'],'%d/%m/%Y %H:%M:%S').strftime('%d/%m/%Y')
+            df.loc[index, 'Dia'] = preprocessing_utils.WEEK[dt.datetime.strptime(row['Data'],'%d/%m/%Y %H:%M:%S').weekday()]
+            df.loc[index, 'Hora'] = dt.datetime.strptime(row['Data'],'%d/%m/%Y %H:%M:%S').hour
+            df.loc[index, 'Tempo Online'] = self.getStandardizeTime(row['Tempo Online'])
         return df
 
     def getStandardizeTime(self, time):
@@ -123,10 +121,13 @@ class PreprocessingWifi(Resource):
     # @jwt_required
     def post(self):
         try:
-            # @TODO: Implementar aqui função de salvar o arquivo igual ao PrePRocessing.py
             files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/wifi/*.*"
-            files = preprocessing_utils.read_files(files_path)
-            df = preprocessing_utils.append_files(files)
+            try:
+                files = preprocessing_utils.read_files(files_path)
+                df = preprocessing_utils.append_files(files, 'csv')
+            except:
+                return 'Error pre processing files', 500
+            
             columns_to_select = [self.data_login, self.gender, 'Idade', self.online_time, 'Mac Address']
             df = preprocessing_utils.select_columns(df, columns_to_select)
             df = preprocessing_utils.remove_na(df)

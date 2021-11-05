@@ -95,7 +95,7 @@ class DataSourceDialog extends Component {
               <div style={{ paddingBottom: '.5vh' }}><DialogSpan>Arquivo:</DialogSpan></div>
               <Upload
                 onUpload={(uploadedFiles) => this.setState({ uploadedFiles })}
-                accept="text/csv"
+                accept=".xlsx, .xls, .csv, .json"
                 message="Arraste um arquivo CSV ou clique aqui."
               />
             </div>)}

@@ -33,7 +33,7 @@ class PreprocessingSales(Resource):
         return df.dropna() # Remove all not a number
 
     def convertDate(self, df, col = 'Date'):
-        date_format = '%Y/%m/%d %H:%M:%S'
+        date_format = '%d/%m/%Y %H:%M'
         date_std_format = '%d/%m/%Y'
         df = df.sort_values(by=col, key=lambda value: pd.to_datetime(value, format=date_format))
 
@@ -43,9 +43,9 @@ class PreprocessingSales(Resource):
         df.drop(columns=col, inplace = True)
 
         for index, row in tqdm(df.iterrows(), total=df.shape[0]):
-            df.loc[index, 'Data'] = row['Data'].strftime(date_std_format)
-            df.loc[index, 'Dia'] = preprocessing_utils.WEEK[row['Data'].weekday()]
-            df.loc[index, 'Hora'] = row['Data'].hour
+            df.loc[index, 'Data'] = dt.datetime.strptime(row['Data'],'%d/%m/%Y %H:%M').strftime('%d/%m/%Y')
+            df.loc[index, 'Dia'] = preprocessing_utils.WEEK[dt.datetime.strptime(row['Data'],'%d/%m/%Y %H:%M').weekday()]
+            df.loc[index, 'Hora'] = dt.datetime.strptime(row['Data'],'%d/%m/%Y %H:%M').hour
 
         return df
 

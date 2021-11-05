@@ -1,5 +1,7 @@
 import glob
 import pandas as pd
+import xlrd
+import csv
 
 def save_file(df, path):
     df.to_csv(path, index=False)
@@ -15,10 +17,16 @@ def read_files(files_path):
     files = glob.glob(files_path)
     return files
 
-def append_files(files):
+def append_files(files, type=''):
     df = pd.DataFrame()
     for path in files:
-        sheet = pd.read_excel(path, engine='openpyxl')
+        if type=='csv':
+            csvPath = path.split('.')[0] + '.csv'
+            if csvPath != path:
+                csv_from_excel(path, csvPath)
+            sheet = pd.read_csv(csvPath)
+        else:
+            sheet = pd.read_excel(path, engine='openpyxl')
         df = df.append(sheet, ignore_index=True)
     return df
 
@@ -27,3 +35,15 @@ def select_columns(df, columns):
 
 # constants
 WEEK = ["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"]
+
+
+def csv_from_excel(file, csvPath):
+    wb = xlrd.open_workbook(file)
+    sh = wb.sheet_by_name('Sheet1')
+    your_csv_file = open(csvPath, 'w')
+    wr = csv.writer(your_csv_file, quoting=csv.QUOTE_ALL)
+
+    for rownum in range(sh.nrows):
+        wr.writerow(sh.row_values(rownum))
+
+    your_csv_file.close()

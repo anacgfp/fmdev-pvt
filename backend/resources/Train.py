@@ -16,8 +16,7 @@ from sklearn.model_selection import StratifiedKFold
 from scipy.stats import wilcoxon
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
-import pycaret
-from pycaret.classification import *  
+from pycaret.classification import setup, compare_models, pull
 from pycaret.utils import enable_colab
 from sklearn.metrics import confusion_matrix, accuracy_score
 import itertools as it
@@ -89,7 +88,6 @@ class Train(Resource):
 
         for (index, line), model in zip(table.iterrows(), models_list):
             if line[METRIC_TRAIN] > THRESHOLD:
-                print('aaaa')
                 models_trained.loc[models_trained.shape[0]] = [ index, line.Model, model, line[METRIC_TRAIN] ]
 
         return models_trained
@@ -254,16 +252,16 @@ class Train(Resource):
 
                     models_trained = self.trainingModels(METRIC_TRAIN, THRESHOLD)
                     lista.append(models_trained.shape)
-                    # models_trained.to_excel(dir_+'trained.xlsx', index=False)
+                    models_trained.to_excel(dir_+'trained.xlsx', index=False)
 
-                    # models_tuned = self.tuningModels(models_trained, METRIC_TRAIN)
-                    # models_tuned.to_excel(dir_+'tuned.xlsx', index=False)
+                    models_tuned = self.tuningModels(models_trained, METRIC_TRAIN)
+                    models_tuned.to_excel(dir_+'tuned.xlsx', index=False)
 
-                    # models_hyp = self.wilcoxonTest(train, models_tuned, TARGET_NAME, METRIC_WILCOXON)
-                    # models_hyp.to_excel(dir_+'hypothesis.xlsx', index=False)
+                    models_hyp = self.wilcoxonTest(train, models_tuned, TARGET_NAME, METRIC_WILCOXON)
+                    models_hyp.to_excel(dir_+'hypothesis.xlsx', index=False)
 
-                    # results = self.testingModels(models_hyp, test, dir_, TARGET_NAME)
-                    # results.to_excel(dir_+'results.xlsx', index=True)
+                    results = self.testingModels(models_hyp, test, dir_, TARGET_NAME)
+                    results.to_excel(dir_+'results.xlsx', index=True)
                 except Exception as _ :
                     print('Error')
 
