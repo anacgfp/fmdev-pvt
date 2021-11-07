@@ -68,6 +68,15 @@ class DataSourceDialog extends Component {
     this.props.postDataSource({ name, file_id: fileId[0], typeOfData });
     this.onClose();
   }
+  // getNameOfFile = () => {
+  //   if () {
+  //     return 'fluxo';
+  //   } else if (this.props.typeOfData === 'SALES') {
+  //     return 'vendas'
+  //   } else {
+  //     return this.props.typeOfData;
+  //   }
+  // }
 
   render() {
     const { name, uploadedFiles } = this.state;
@@ -82,7 +91,11 @@ class DataSourceDialog extends Component {
         <DialogForm
           style={{ maxHeight: '60vh', overflowY: 'auto' }}>
           <h1>Adicionar Fonte de Dados</h1>
-
+          <h5> Adicionar os arquivos apenas de {
+            this.props.typeOfData === 'FLOW' ? 'fluxo' : 
+              this.props.typeOfData === 'SALES' ? 'vendas' : 
+                'wifi'
+            }</h5>
           <DialogSpan>Fonte de dados:</DialogSpan>
           <DialogInput
             value={name}

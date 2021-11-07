@@ -4,10 +4,12 @@ import { DropContainer, UploadMessage } from './styles';
 import api from '../../services/api';
 import filesize from "filesize";
 
+
 export default class Upload extends Component {
 
   state = {
-    uploadedFiles: []
+    uploadedFiles: [],
+    errorMessage: ''
   };
 
   handleUpload = files => {
@@ -67,10 +69,13 @@ export default class Upload extends Component {
           url: response.data.url
         });
       })
-      .catch(() => {
+      .catch((e) => {
         this.updateFile(uploadedFile.id, {
           error: true
         });
+        if (e.response.status === 422) {
+          this.setState({errorMessage: 'Tipo de arquivo não compatível com a fonte de dados escolhida'});
+        }
       });
   };
 
@@ -81,6 +86,9 @@ export default class Upload extends Component {
 
     if (isDragReject) {
       return <UploadMessage type="error">Arquivo não suportado</UploadMessage>
+    }
+    if (this.state.error !== '') {
+      return <UploadMessage type='error'>{this.state.errorMessage}</UploadMessage>
     }
 
     return <UploadMessage type="success">Solte os arquivos aqui</UploadMessage>
