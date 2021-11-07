@@ -17,15 +17,16 @@ class PreprocessingWifi(Resource):
     
     def removeAgeInconsistencies(self, df):
         df = df[df['Idade'] != 'Anos'] # Remove undefined 'Idade'
-        df['Idade'] =  df['Idade'].str.replace(' Anos', '').astype('int64')
-        df = df[df['Idade'] < 100]
 
+        for index, row in df.iterrows(): # Remove suffix 'Anos' and transform to number
+            df.loc[index, 'Idade'] = int(row['Idade'].split(' ')[0])
+
+        df = df[df['Idade'] < 100] # Remove anomalies 'Idade' more than 100 years
         return df
 
 
     def removeGenderIncosistencies(self, df):
         df = df[df[self.gender] != 'Gênero não informado'] # Remove undefined 'Gênero não informado'
-
         return df
 
     def convertDate(self, df, col = data_login):
@@ -43,7 +44,6 @@ class PreprocessingWifi(Resource):
         return df
 
     def getStandardizeTime(self, time):
-
         if '-' in time:
             time = '0h0m1s'
 
@@ -54,12 +54,10 @@ class PreprocessingWifi(Resource):
             time = time.split('h')[0] + 'h0m' + time.split('h')[1]
 
         elif 'h' not in time:
-            time = '0h' + time
-        
+            time = '0h' + time        
         return dt.datetime.strptime(time,'%Hh%Mm%Ss').strftime('%H:%M:%S')
     
     def sumTimeOfRepeatedRows(self, df):
-
         df.reset_index(inplace=True) # reset index
 
         days = df['Data'].unique() # all days uniques from dataset
@@ -124,10 +122,10 @@ class PreprocessingWifi(Resource):
             files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/wifi/*.*"
             try:
                 files = preprocessing_utils.read_files(files_path)
-                df = preprocessing_utils.append_files(files, 'csv')
             except:
-                return 'Error pre processing files', 500
-            
+                return 'Error reading files', 500
+            df = preprocessing_utils.append_files(files)
+
             columns_to_select = [self.data_login, self.gender, 'Idade', self.online_time, 'Mac Address']
             df = preprocessing_utils.select_columns(df, columns_to_select)
             df = preprocessing_utils.remove_na(df)

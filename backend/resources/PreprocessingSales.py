@@ -19,8 +19,8 @@ class PreprocessingSales(Resource):
     def append_files(self, files):
         df = pd.DataFrame()
         for path in files:
-            sheet = pd.read_excel(path, engine='openpyxl')
-            store_name = path.split("-")[1]  # Get file name
+            sheet = pd.read_excel(path)
+            store_name = path.split("-")[1].replace('я', '´')  # Get file name
             sheet.insert(1, "Name", store_name) # Add new column with store name
             df = df.append(sheet, ignore_index=True)
         return df
@@ -91,8 +91,10 @@ class PreprocessingSales(Resource):
             
             path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/sales_dataset.csv"
             preprocessing_utils.save_file(df, path)
+            json = df.to_json()
 
-            return 'ok'
+
+            return json
         except:
             traceback.print_exc()
             return None, 500

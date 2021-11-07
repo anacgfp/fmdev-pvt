@@ -18,10 +18,6 @@ import Dashboard from '../../components/Dashboard';
 
 class Main extends Component {
 
-  componentDidMount() {
-    this.props.getLms();
-  }
-
   renderContent = () => {
     const { activeComponent } = this.props.screen;
 
@@ -62,7 +58,7 @@ class Main extends Component {
   }
 }
 
-const mapStateToProps = ({ screen }) => ({ screen });
+const mapStateToProps = ({ screen }) => ( { screen });
 
 const mapDispatchToProps = (dispatch) =>
   bindActionCreators({ ...ScreenActions, ...LmsActions }, dispatch);

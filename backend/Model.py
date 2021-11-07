@@ -131,10 +131,14 @@ class DatasourceModel(db.Model, TimestampMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(), nullable=False)
     file_id = db.Column(db.Integer, db.ForeignKey('files.id'), nullable=False)
+    typeOfData = db.Column(db.String(), nullable=False)
 
-    def __init__(self, name, file_id):
+
+    def __init__(self, name, file_id, typeOfData):
         self.name = name
         self.file_id = file_id
+        self.typeOfData = typeOfData
+
 
 
 class DatasourceModelSchema(ma.Schema):
@@ -144,7 +148,7 @@ class DatasourceModelSchema(ma.Schema):
     size = fields.Float()
     created_at = fields.DateTime()
     updated_at = fields.DateTime()
-
+    typeOfData = fields.String()
 
 class FileModel(db.Model, TimestampMixin):
     __tablename__ = 'files'

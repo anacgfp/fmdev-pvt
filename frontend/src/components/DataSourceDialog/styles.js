@@ -8,7 +8,7 @@ export const DialogSpan = styled.span`
 `;
 
 export const DialogForm = styled.form`
-  border-radius: 5px;
+  border-radius: 15px;
   padding: 40px;
   width: 400px;
   display: flex;

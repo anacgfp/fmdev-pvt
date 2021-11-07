@@ -46,11 +46,12 @@ export default class Upload extends Component {
 
   processUpload = uploadedFile => {
     const data = new FormData();
+    const typeOfData = this.props.typeOfData;
 
     data.append("file", uploadedFile.file, uploadedFile.name);
 
     api
-      .post("file?typeOfData=wifi", data, {
+      .post(`file?typeOfData=${typeOfData}`, data, {
         onUploadProgress: e => {
           const progress = parseInt(Math.round((e.loaded * 100) / e.total));
 

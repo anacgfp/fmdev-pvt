@@ -17,13 +17,13 @@ class Datasource(Resource):
     def get(self):
         try:
             res = db.session.query(DatasourceModel.id, DatasourceModel.created_at,
-                                   DatasourceModel.name, FileModel.size) \
+                                   DatasourceModel.name, FileModel.size, DatasourceModel.typeOfData) \
                 .join(FileModel, DatasourceModel.file_id == FileModel.id) \
                 .order_by(desc(DatasourceModel.created_at)).all()
 
             schema = DatasourceModelSchema(many=True)
             data = schema.dump(res)
-
+            print(data)
             return data
 
         except:
@@ -37,7 +37,8 @@ class Datasource(Resource):
 
             model = DatasourceModel(
                 name=data['name'],
-                file_id=data['file_id']
+                file_id=data['file_id'],
+                typeOfData = data['typeOfData'].lower(),
             )
 
             db.session.add(model)

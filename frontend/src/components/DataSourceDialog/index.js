@@ -64,8 +64,8 @@ class DataSourceDialog extends Component {
       this.renderWarningMsg('Nenhum arquivo importado');
       return;
     }
-
-    this.props.postDataSource({ name, file_id: fileId[0] });
+    const typeOfData = this.props.typeOfData;
+    this.props.postDataSource({ name, file_id: fileId[0], typeOfData });
     this.onClose();
   }
 
@@ -79,7 +79,8 @@ class DataSourceDialog extends Component {
 
     return (
       <Dialog>
-        <DialogForm>
+        <DialogForm
+          style={{ maxHeight: '60vh', overflowY: 'auto' }}>
           <h1>Adicionar Fonte de Dados</h1>
 
           <DialogSpan>Fonte de dados:</DialogSpan>
@@ -97,6 +98,7 @@ class DataSourceDialog extends Component {
                 onUpload={(uploadedFiles) => this.setState({ uploadedFiles })}
                 accept=".xlsx, .xls, .csv, .json"
                 message="Arraste um arquivo CSV ou clique aqui."
+                typeOfData={this.props.typeOfData}
               />
             </div>)}
 
