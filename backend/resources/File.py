@@ -14,7 +14,7 @@ class File(Resource):
     ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'json'}
     
     def sanitize_filename(self, filename):
-        return filename.replace(' ', '').replace('_', '')
+        return filename.replace(' ', '').replace('_', '').lower()
 
     def allowed_file(self, filename):
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in self.ALLOWED_EXTENSIONS
@@ -51,9 +51,15 @@ class File(Resource):
             if 'file' not in request.files:
                 return {'msg': 'No file part'}, 500
             file = request.files['file']
-            typeOfData = request.args.get('typeOfData')
-            print('asds', typeOfData)
+            typeOfData = request.args.get('typeOfData').lower()
             file.filename = self.sanitize_filename(file.filename)
+            
+            if typeOfData == 'wifi' and 'hotspot' not in file.filename:
+                return {'msg': 'not a valid file for wifi'}, 422
+            if typeOfData == 'flow' and 'fluxo' not in file.filename:
+                return {'msg': 'not a valid file for flow'}, 422
+            if typeOfData == 'sales' and 'ticket' not in file.filename:
+                return {'msg': 'not a valid file for sales'}, 422
             extension = get_extension_from_path(file.filename)
             upload_folder = f"{current_app.config.get('PRE_PROCESSING_RAW')}/{typeOfData}"
             file_id = f"{str(uuid.uuid4())}{extension}"
