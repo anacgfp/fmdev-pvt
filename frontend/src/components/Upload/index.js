@@ -51,7 +51,6 @@ export default class Upload extends Component {
     const typeOfData = this.props.typeOfData;
 
     data.append("file", uploadedFile.file, uploadedFile.name);
-
     api
       .post(`file?typeOfData=${typeOfData}`, data, {
         onUploadProgress: e => {
@@ -73,9 +72,6 @@ export default class Upload extends Component {
         this.updateFile(uploadedFile.id, {
           error: true
         });
-        if (e.response.status === 422) {
-          this.setState({errorMessage: 'Tipo de arquivo não compatível com a fonte de dados escolhida'});
-        }
       });
   };
 

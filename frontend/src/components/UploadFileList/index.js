@@ -22,11 +22,10 @@ class UploadFileList extends Component {
 
   render() {
     const { files } = this.props;
-
     return (
       <Container>
         {files.map((uploadedFile, idx) => (
-          <li key={uploadedFile.id || idx}>
+          <li key={idx}>
             <FileInfo>
               <Preview><FileIcon size={24} color={primaryColor} /></Preview>
               <div>
