@@ -62,14 +62,13 @@ class File(Resource):
                 return {'msg': 'not a valid file for sales'}, 422
             extension = get_extension_from_path(file.filename)
             upload_folder = f"{current_app.config.get('PRE_PROCESSING_RAW')}/{typeOfData}"
-            file_id = f"{str(uuid.uuid4())}{extension}"
             if file and self.allowed_file(file.filename):
                 file.save(os.path.join(upload_folder, file.filename))
             else:
                 return {'msg': 'Extension file invalid'}, 500
             
             data = {
-                'id': file_id,
+                'id': file.filename,
                 'filename': file.filename,
                 'extension': extension.replace('.', ''),
                 'size': self.get_file_size(upload_folder, file.filename),

@@ -19,9 +19,6 @@ from resources.Download import Download
 from resources.Datasource import Datasource
 from resources.File import File
 from resources.Phenomenon import Phenomenon
-from resources.PreprocessingFlow import PreprocessingFlow
-from resources.PreprocessingSales import PreprocessingSales
-from resources.PreprocessingWifi import PreprocessingWifi
 from resources.PreprocessingAll import PreprocessingAll
 
 api_bp = Blueprint('api', __name__)
@@ -49,9 +46,6 @@ api.add_resource(Datasource, '/data-source', '/data-source/<string:key>')
 api.add_resource(Download, '/download/<string:key>')
 api.add_resource(File, '/file', '/file/<string:key>')
 
-api.add_resource(PreprocessingFlow, '/prepr-flow')
-api.add_resource(PreprocessingSales, '/prepr-sales')
-api.add_resource(PreprocessingWifi, '/prepr-wifi')
 api.add_resource(PreprocessingAll, '/prepr')
 api.add_resource(Train, '/train')
 

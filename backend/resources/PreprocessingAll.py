@@ -2,15 +2,70 @@ import traceback
 from flask import request, current_app
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required
-from tabulate import tabulate
 from tqdm import tqdm
 import datetime as dt
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns; sns.set()  # for plot styling
+import seaborn as sns
 import numpy as np
 from sklearn.cluster import KMeans
 from utils import preprocessing_utils
+
+
+def process_flow():
+    print('flow processing started')
+    files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/flow/*.*"
+    files = preprocessing_utils.read_files(files_path)
+    df = preprocessing_utils.import_json(files[0])
+
+    df = preprocessing_utils.remove_na(df)
+    df = preprocessing_utils.rename_col(df, 'value', 'Quantidade de Entradas')
+    df = preprocessing_utils.convert_date_flow(df, 'key')
+    path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/flow_dataset.csv"
+    preprocessing_utils.save_file(df, path)
+    print('flow processing ended')
+    
+def process_wifi():
+    print('wifi processing started')
+    files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/wifi/*.*"
+    files = preprocessing_utils.read_files(files_path)
+
+    df = preprocessing_utils.append_files(files)
+
+    columns_to_select = [preprocessing_utils.data_login, 
+                         preprocessing_utils.gender, 'Idade', 
+                         preprocessing_utils.online_time, 'Mac Address']
+    df = preprocessing_utils.select_columns(df, columns_to_select)
+    df = preprocessing_utils.remove_na(df)
+    df = preprocessing_utils.remove_age_inconsistencies(df)
+    df = preprocessing_utils.remove_gender_inconsistencies(df)
+    df = preprocessing_utils.convert_date_wifi(df, preprocessing_utils.data_login)
+    df = preprocessing_utils.sum_time_repeated_rows(df)
+    
+    df = preprocessing_utils.datetime_to_seconds(df)
+    df1 = df.copy()
+    path1 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/Wifi_dataset_with_gender.csv"
+    preprocessing_utils.save_file(df1, path1)
+    path2 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/Wifi_dataset.csv"
+    df = preprocessing_utils.binarize_gender(df)
+    preprocessing_utils.save_file(df, path2)
+    print('wifi processing ended')
+
+
+
+def process_sales():
+    print('sales processing started')
+    files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/sales/*.*"
+    files = preprocessing_utils.read_files(files_path)
+    df = preprocessing_utils.append_files(files)
+    df = preprocessing_utils.select_columns(df, ['Name', 'Total', 'Date'])
+    df = preprocessing_utils.remove_na(df)
+    df = preprocessing_utils.convert_date_sales(df, 'Date')
+    df = preprocessing_utils.generate_tickets(df)
+            
+    path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/sales_dataset.csv"
+    preprocessing_utils.save_file(df, path)
+    print('sales processing ended')
 
 
 class PreprocessingAll(Resource):
@@ -308,7 +363,13 @@ class PreprocessingAll(Resource):
     # @jwt_required
     def post(self):
         try:
-            # @TODO: Implementar aqui função de salvar o arquivo igual ao PrePRocessing.py
+            process_flow()
+            
+            process_wifi()
+
+            process_sales()
+
+            
             dir_wifi, dir_sales, dir_flow, dir_segments = self.read_files()
             dfWifi = pd.read_csv(dir_wifi)
             dfSales = pd.read_csv(dir_sales)
