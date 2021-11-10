@@ -57,6 +57,7 @@ const Button = styled.button.attrs({
   font-weight: normal;
   color: #FFF;
   transition: background-color 0.15s ease;
+  padding: 5px;
 
   &:hover {
     color: #FFF;

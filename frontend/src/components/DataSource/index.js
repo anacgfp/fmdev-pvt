@@ -25,6 +25,7 @@ import IconButton from '@material-ui/core/IconButton';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import AlertDialog from '../AlertDialog';
 import filesize from "filesize";
+import api from '../../services/api';
 
 const availableLms = { moodle: true };
 
@@ -32,12 +33,15 @@ class DataSource extends Component {
 
   state = {
     selectedItem: null,
-    chipSelected: FLOW
+    chipSelected: FLOW,
+    loading: false,
+    loadingMessage: 'Carregando os dados...'
   }
 
   componentWillMount() {
     this.props.getDataSource();
   }
+
   openDialogConfig = (item, event) => {
     if (!availableLms[item.name]) return;
 
@@ -131,31 +135,61 @@ class DataSource extends Component {
 
   addDataSource = () => this.props.setDialog('dataSource');
 
+  startPreProcessing = () => {
+    this.setState( {loading: true, loadingMessage: 'Pré processando os dados. Isto pode demorar, aguarde...'});
+        api
+        .post('prepr')
+        .then(response => {
+          console.log('resposta');
+        })
+        .catch((e) => {
+          console.log(e);
+        })
+        .finally(() => {
+          this.setState( {loading: false, loadingMessage: ''});
+        }
+        );
+  }
+
+  generateModel = () => {
+    this.setState( {loading: true, loadingMessage: 'Gerando o modelo. Isto pode demorar, aguarde...'});
+    api
+    .post('train')
+    .then(response => {
+      console.log('resposta');
+    })
+    .catch((e) => {
+      console.log(e);
+    })
+    .finally(() => {
+      this.setState( {loading: false, loadingMessage: ''});
+    }
+    );
+  }
+
   render() {
     const { chipSelected } = this.state;
     const { data_source } = this.props;
-    const loading = !!data_source.loading;
+    const loading = !!data_source.loading || this.state.loading;
     const hasData = !!data_source.data.length;
+    const loadingMessage = this.state.loadingMessage;
+    // this.state.loadingMessage
 
     return (
-      <PerfectScrollbar style={{ width: '100%' }}>
+      <PerfectScrollbar style={{ width: '100%', display: 'flex', flexDirection: 'row' }}>
         <ConfigContainer style={{ minHeight: '70%'}}>
-
           <Header>
             <h1>Fontes de Dados</h1>
-            <div>
-              <CustomButton filled={false} onClick={this.addDataSource}>Adicionar fonte de dados</CustomButton>
-            </div>
-            <div>
-              <CustomButton filled={false} onClick={() => console.log('cliquei')}>Iniciar pré-processamento</CustomButton>
-            </div>
           </Header>
 
-          {this.renderDatasetOptions()}
-          <CardContainer>{data_source.data.map((item, idx) => this.renderCardCSV(item, idx))}</CardContainer>
+          {loading? null : this.renderDatasetOptions()}
+          {
+            loading? null : <CardContainer>{data_source.data.map((item, idx) => this.renderCardCSV(item, idx))}</CardContainer>
+          }
 
           {loading && (
-            <StatusMsgContainer>
+            <StatusMsgContainer style={{ display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+            <h2 style={{ fontSize: 16, }}> { loadingMessage }</h2>
               <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="4" fill="#EEEEEE" animationDuration=".5s" />
             </StatusMsgContainer>
           )}
@@ -164,6 +198,27 @@ class DataSource extends Component {
             <StatusMsgContainer>Nenhuma fonte de dados cadastrada</StatusMsgContainer>
           )}
         </ConfigContainer>
+
+  
+        <div style={{ minHeight: '70%', marginTop: '15vh', marginBottom: '20vh', backgroundColor: 'white',
+                    display: 'flex', flexDirection: 'column', boxShadow: '4px 4px 4px 0px rgba(0, 0, 0, 0.1)',
+                    borderRadius: '0 5px 5px 0'}}>
+            <div style={{display: 'flex', justifyContent: 'center', marginTop: '32px'}}>
+              <CustomButton 
+              style={{padding: '1px', height: 'max-content', minHeight: '60px', margin: '5px', width: '80%'}}
+              filled={false} onClick={this.addDataSource}>Adicionar fonte de dados</CustomButton>
+            </div>
+        <div style={{display: 'flex', justifyContent: 'center'}}>
+              <CustomButton 
+              style={{padding: '1px', height: 'max-content', minHeight: '60px', margin: '5px', width: '80%'}}
+              filled={false} onClick={this.startPreProcessing}>Iniciar pré-processamento</CustomButton>
+            </div>
+            <div style={{display: 'flex', justifyContent: 'center'}}>
+              <CustomButton 
+              style={{padding: '1px', height: 'max-content', minHeight: '60px', margin: '5px', width: '80%'}}
+              filled={true} onClick={this.generateModel}>Gerar Modelo</CustomButton>
+            </div>
+        </div>
         <MoodleConfigDialog />
         <DataSourceDialog typeOfData={chipSelected}/>
         <AlertDialog onSubmit={this.handleDelete}></AlertDialog>

@@ -288,8 +288,9 @@ export const ItemColumn = styled.td`
 
 export const Header = styled.div`
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
 
   button {
     margin-right: 2rem;

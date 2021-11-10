@@ -4,7 +4,7 @@ const sizes = {
   default: css`
     margin-top: 15vh;
     margin-bottom: 20vh;
-    margin-left: 20vw;
+    margin-left: 15vw;
     width: 60%;
     min-height: 60vh;
   `,
@@ -21,7 +21,7 @@ const sizes = {
 export const ConfigContainer = styled.div`
   background: #FFFFFF;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
-  border-radius: 5px;
+  border-radius: 5px 0 0 5px;
 
   ${props => sizes[props.size || 'default']}
   
