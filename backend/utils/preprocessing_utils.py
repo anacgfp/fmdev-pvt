@@ -24,12 +24,6 @@ def read_files(files_path):
 def append_files(files, type=''):
     df = pd.DataFrame()
     for path in files:
-        # if type=='csv':
-        #     csvPath = path.split('.')[0] + '.csv'
-        #     if csvPath != path:
-        #         csv_from_excel(path, csvPath)
-        #     sheet = pd.read_csv(csvPath, encoding = 'utf8')
-        # else:
         sheet = pd.read_excel(path)
         df = df.append(sheet, ignore_index=True)
     return df

@@ -140,6 +140,7 @@ class Train(Resource):
         return result
     
     def testingModels(self, models, test, dir, TARGET_NAME):
+        print('testing models')
         # Get Test Data
         test_normalized = self.normalize(test, TARGET_NAME)
 

@@ -57,7 +57,7 @@ def process_sales():
     print('sales processing started')
     files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/sales/*.*"
     files = preprocessing_utils.read_files(files_path)
-    df = preprocessing_utils.append_files(files)
+    df = preprocessing_utils.append_files_sales(files)
     df = preprocessing_utils.select_columns(df, ['Name', 'Total', 'Date'])
     df = preprocessing_utils.remove_na(df)
     df = preprocessing_utils.convert_date_sales(df, 'Date')
@@ -363,12 +363,9 @@ class PreprocessingAll(Resource):
     # @jwt_required
     def post(self):
         try:
-            process_flow()
-            
-            process_wifi()
-
-            process_sales()
-
+            # process_flow()            
+            # process_wifi()
+            # process_sales()
             
             dir_wifi, dir_sales, dir_flow, dir_segments = self.read_files()
             dfWifi = pd.read_csv(dir_wifi)
@@ -383,7 +380,6 @@ class PreprocessingAll(Resource):
             df = self.calculeTotalofNextHour(df)
 
             df = self.calculeTotalofHour(df)
-
             df.boxplot(['Total'])
             plt.savefig(f"{current_app.config.get('PRE_PROCESSING_RAW')}/imgs/boxplot_total.png")
             y_kmeans = self.kmeansClustering(2, 'Hora', 'Total', df)
