@@ -114,50 +114,50 @@ def convert_date_wifi(df, col = data_login):
     return df
 
 def sum_time_repeated_rows(df):
-    df.reset_index(inplace=True) # reset index
+  df.reset_index(inplace=True) # reset index
 
-    days = df['Data'].unique() # all days uniques from dataset
+  days = df['Data'].unique() # all days uniques from dataset
 
-    total = days.shape[0] # count uniques days
+  total = days.shape[0] # count uniques days
 
-    for date in tqdm(days, total=total): # iterate all days from dataset
+  for date in tqdm(days, total=total): # iterate all days from dataset
 
-        for hour in range(0, 24): # iterate each hour
+    for hour in range(0, 24): # iterate each hour
 
-            tmp = df[ (df['Data'] == date) & (df['Hora'] == hour) ] # temporary set filtered
-                
-            repeated = tmp['Mac Address'].value_counts()[tmp['Mac Address'].value_counts() > 1].index # get repeated mac by MAC ADDRESS
-                
-        if repeated.empty: # check if there no repeated row
-            continue
-            
-        for mac in repeated: # if there are, iterate by each mac
+      tmp = df[ (df['Data'] == date) & (df['Hora'] == hour) ] # temporary set filtered
+      
+      repeated = tmp['Mac Address'].value_counts()[tmp['Mac Address'].value_counts() > 1].index # get repeated mac by MAC ADDRESS
+      
+      if repeated.empty: # check if there no repeated row
+        continue
+      
+      for mac in repeated: # if there are, iterate by each mac
 
-            itens = tmp[ tmp['Mac Address'] == mac ] # get itens repeated 
+        itens = tmp[ tmp['Mac Address'] == mac ] # get itens repeated 
 
-            baseItem = itens.iloc[0] # get the baseline item
-                
-            totalTime = dt.datetime.strptime(baseItem[online_time], '%H:%M:%S') # get the baseline time
-
-            itens = itens.iloc[1:] # remove the first row
-                
-            for index, item in itens.iterrows(): # iterate by others rows
-            
-                totalTime = (totalTime - dt.datetime.strptime('00:00:00', '%H:%M:%S') + dt.datetime.strptime(item[online_time], '%H:%M:%S')) # sum all time 
-
-                df.loc[index,'index'] = -1 # set row as deprecated
-                
-            baseItem[online_time] = totalTime.strftime('%H:%M:%S') # set a sum of time
-                
-            df.iloc[baseItem.name] = baseItem # update a baseline element in original dataset
-
-    df.drop(df.index[df['index'] == -1], inplace=True) # drop deprecated rows 
-
-    df.drop(columns=['index', 'Mac Address'], axis=1, inplace=True) # remove deprecated columns
+        baseItem = itens.iloc[0] # get the baseline item
         
-    df.reset_index(drop=True ,inplace=True) # reset index
+        totalTime = dt.datetime.strptime(baseItem['Tempo Online'], '%H:%M:%S') # get the baseline time
+
+        itens = itens.iloc[1:] # remove the first row
         
-    return df # return DataFrame
+        for index, item in itens.iterrows(): # iterate by others rows
+      
+          totalTime = (totalTime - dt.datetime.strptime('00:00:00', '%H:%M:%S') + dt.datetime.strptime(item['Tempo Online'], '%H:%M:%S')) # sum all time 
+
+          df.loc[index,'index'] = -1 # set row as deprecated
+        
+        baseItem['Tempo Online'] = totalTime.strftime('%H:%M:%S') # set a sum of time
+        
+        df.iloc[baseItem.name] = baseItem # update a baseline element in original dataset
+
+  df.drop(df.index[df['index'] == -1], inplace=True) # drop deprecated rows 
+
+  df.drop(columns=['index', 'Mac Address'], axis=1, inplace=True) # remove deprecated columns
+  
+  df.reset_index(drop=True ,inplace=True) # reset index
+  
+  return df # return DataFrame
 
 def datetime_to_seconds(df):
     for index, row in df.iterrows():

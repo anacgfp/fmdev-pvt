@@ -1,6 +1,7 @@
 import traceback
 import numpy as np
 import pandas as pd
+from pycaret.classification import *  
 from utils import preprocessing_utils
 from flask import jsonify
 from flask_restful import Resource
@@ -16,7 +17,6 @@ from sklearn.model_selection import StratifiedKFold
 from scipy.stats import wilcoxon
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
-from pycaret.classification import setup, compare_models, pull
 from pycaret.utils import enable_colab
 from sklearn.metrics import confusion_matrix, accuracy_score
 import itertools as it
@@ -28,19 +28,8 @@ class Train(Resource):
     def read_paths(self):
         dia = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia.csv"
         hora = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora.csv"
-        d1 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Alimentação.csv"
-        d2 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Âncoras.csv"
-        d3 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Artigos Diversos.csv"
-        d4 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Artigos do Lar.csv" 
-        d5 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Serviços.csv" 
-        d6 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Dia - Vestuário.csv" 
-        h1 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Alimentação.csv"
-        h2 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Âncoras.csv"
-        h3 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Artigos Diversos.csv" 
-        h4 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Artigos do Lar.csv" 
-        h5 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Serviços.csv" 
-        h6 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/Hora - Vestuário.csv" 
-        return dia, hora, d1, d2, d3, d4, d5, d6, h1, h2, h3, h4, h5, h6
+
+        return dia, hora
 
     def featureSelection(self, df, TARGET_NAME, fee = 0.30):
         #Using Pearson Correlation
@@ -54,7 +43,7 @@ class Train(Resource):
         df = df.filter(list(relevant_features.index))
 
         return df
-
+    
     def creatingModel(self, train, TARGET_NAME, TRAIN_SIZE, FEATURES_NAME):    
         # Using 70% train and 30% validate
         cls = setup(data= train,
@@ -68,18 +57,24 @@ class Train(Resource):
         return cls
     
     def tuningModels(self, models_trained, METRIC_TRAIN):
-
+        print('tuned')
         models = pd.DataFrame(columns=['initials','name','model','score'])
-
+        print(models.head(0))
+        a = 0
         for model in models_trained.itertuples():
-            tuned = self.tune_model(model.model, optimize = METRIC_TRAIN, n_iter=30, verbose= True )
+            a +=1
+            print('dasdas')
+            tuned = tune_model(model.model, optimize = METRIC_TRAIN, n_iter=30, verbose= False )
+            print('primeiro', a)
             models.loc[models.shape[0]] = [ model.initials, model.name, tuned, pull()[METRIC_TRAIN].Mean ]
-            
+            print('segundo', a)
+        print('chegou', a)
         models.sort_values(by=['score'], ascending=False, inplace=True, ignore_index=True)
         return models
 
 
     def trainingModels(self, METRIC_TRAIN, THRESHOLD):
+        print('training')
 
         models_list = compare_models(sort=METRIC_TRAIN, n_select=13)
         # Select N Best Models
@@ -93,7 +88,8 @@ class Train(Resource):
         return models_trained
     
 
-    def wilcoxonTest(self, train, models, TARGET_NAME, METRIC_WILCOXON, p_limit=0.05):
+    def wilcoxonTest(self, train, models, TARGET_NAME, METRIC_WILCOXON):
+        print('wilcoxon')
         # Get Train Data
 
         X_train = train.drop([TARGET_NAME], axis=1)
@@ -116,7 +112,7 @@ class Train(Resource):
             for name2 in cv_results:
                 if name1!=name2:
                     stat, p = wilcoxon(cv_results[name1], cv_results[name2])
-                    if p > p_limit:
+                    if p > 0.05:
                     #print('As distribuições são semelhantes (=): ',name1,'x',name2,'stat=%.3f p=%.3f' % (stat, p))
                         wilcoxon_test.loc[name1,name2] = '='
                     else:
@@ -132,6 +128,7 @@ class Train(Resource):
         return models[models.initials.isin(initials_names)]
 
     def normalize(self, df, target):
+        print('normalize')
         result = df.copy()
         for feature_name in df.columns.difference([target]):
             max_value = df[feature_name].max()
@@ -148,14 +145,15 @@ class Train(Resource):
         Y_test = test_normalized[TARGET_NAME].values
         
         # Generate Confusion Matrix
-        for model in models.itertuples():  
+        for model in models.itertuples():
             plot_confusion_matrix(model.model, X_test, Y_test,
                                 display_labels=['Low','Medium','High'],
                                 cmap=plt.cm.Blues,
                                 normalize='true')
+            baseDir = f"{current_app.config.get('TRAIN_MODELS')}/imgs"
             plt.grid(False)
             plt.title(model.name)
-            plt.savefig(dir+model.name+'.png')
+            plt.savefig(baseDir+model.name+'.png')
             plt.pause(0.05)
 
         # Metrics for Test
@@ -194,27 +192,12 @@ class Train(Resource):
     # @jwt_required
     def post(self):
         try:
-            dia, hora, d1, d2, d3, d4, d5, d6, h1, h2, h3, h4, h5, h6 = self.read_paths()
+            dia, hora = self.read_paths()
             dic = { 
                 'dataset' : [dia.split('.')[0], hora.split('.')[0]],
                 'feature' : ['ALL', 'FS'],
                 'target' : ['Total (T+1)','Total (T+2)','Total (T+3)']
-            }
-            dia = pd.read_csv(dia)
-            hora = pd.read_csv(hora)
-            d1 = pd.read_csv(d1)
-            d2 = pd.read_csv(d2)
-            d3 = pd.read_csv(d3)
-            d4 = pd.read_csv(d4)
-            d5 = pd.read_csv(d5)
-            d6 = pd.read_csv(d6)
-            h1 = pd.read_csv(h1)
-            h2 = pd.read_csv(h2)
-            h3 = pd.read_csv(h3)
-            h4 = pd.read_csv(h4)
-            h5 = pd.read_csv(h5)
-            h6 = pd.read_csv(h6)
-            
+            }            
 
             PARAMS = it.product(*(dic[idx] for idx in dic))
             # Declaration of Constants
@@ -236,10 +219,7 @@ class Train(Resource):
                 FEATURES_NAME = list(df.columns.difference([TARGET_NAME]))
                 type_time = param[0].split('/')[-1]
                 dir_ = f"{current_app.config.get('TRAIN_MODELS')}/Experimentos/{type_time}/{param[1]}/{param[2]}/"
-                try:
-                    os.makedirs(dir_)
-                except:
-                    continue
+                os.makedirs(dir_, exist_ok=True)
 
                 # Init Modeling
                 if param[1] == 'FS':

@@ -1,3 +1,4 @@
+import collections
 import traceback
 from flask import request, current_app
 from flask_restful import Resource
@@ -43,12 +44,9 @@ def process_wifi():
     df = preprocessing_utils.sum_time_repeated_rows(df)
     
     df = preprocessing_utils.datetime_to_seconds(df)
-    df1 = df.copy()
-    path1 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/Wifi_dataset_with_gender.csv"
-    preprocessing_utils.save_file(df1, path1)
-    path2 = f"{current_app.config.get('PRE_PROCESSING_RAW')}/Wifi_dataset.csv"
+    path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/Wifi_dataset.csv"
     df = preprocessing_utils.binarize_gender(df)
-    preprocessing_utils.save_file(df, path2)
+    preprocessing_utils.save_file(df, path)
     print('wifi processing ended')
 
 
@@ -153,6 +151,52 @@ class PreprocessingAll(Resource):
         return res #return new dataframe
     
     def transposeStores(self, df):
+        res = pd.DataFrame(columns=['Data', 'Dia', 'Hora', 'Quantidade de Entradas', 'Gênero', 'Idade', 'Tempo Online']) #new dataframe
+
+        # res['Data'], res['Dia'], res['Hora'], res['Quantidade de Entradas'] = df['Data'], df['Dia'], df['Hora'], df['Quantidade de Entradas'] # get values from baseline
+
+        days = df['Data'].unique() # All days uniques
+
+        total = days.shape[0] # count uniques days
+
+        for date in tqdm(days, total=total): # iterate all days from data
+
+            for hour in range(0, 24): # iterate each hour
+
+                tmp = df[ (df['Data'] == date) & (df['Hora'] == hour) ] # temporary set filtered
+
+                if tmp.empty: # check if there some element into dataframe
+                    continue
+
+                obj = {} # Object to append
+
+                first = None # get first element
+
+                for index, row in tmp.iterrows(): # iterate each store
+
+                    if first == None:
+                        first = True
+
+                        obj = {
+                            'Data': tmp['Data'].head(1).values[0],
+                            'Dia': tmp['Dia'].head(1).values[0],
+                            'Hora': tmp['Hora'].head(1).values[0],
+                            'Quantidade de Entradas': tmp['Quantidade de Entradas'].head(1).values[0],
+                            'Gênero': tmp['Gênero'].head(1).values[0],
+                            'Idade': tmp['Idade'].head(1).values[0],
+                            'Tempo Online': tmp['Tempo Online'].head(1).values[0]
+                        }
+                
+                    obj.update({
+                    row['Loja'] + '.Quantidade de Tickets' : row['Quantidade de Tickets'],
+                    row['Loja'] + '.Ticket Médio' : row['Ticket Médio']
+                    })
+
+                res = res.append(obj, ignore_index=True)    
+
+        return res.fillna(0) #return new dataframe
+    
+    def transposeStoresold(self, df):
 
         res = pd.DataFrame(columns=['Data', 'Dia', 'Hora', 'Quantidade de Entradas', 'Gênero', 'Idade', 'Tempo Online']) #new dataframe
 
@@ -204,7 +248,7 @@ class PreprocessingAll(Resource):
         aux = df.iloc[:,7:-1] # get all without identificators
 
         for index, row in aux.iterrows(): # iterate in lines
-        
+            
             total = 0 # init value equals zero
 
             for i in range(0,len(row),2): # iterate in columns
@@ -212,7 +256,7 @@ class PreprocessingAll(Resource):
 
             df.loc[index,'Total'] = total # insert value in new column
 
-        return df
+        return df # return DataFrame
 
 #@title Function: Calcule the total value for the next hour
 
@@ -328,12 +372,11 @@ class PreprocessingAll(Resource):
     }  
 
     def categorizeCols(self, df, exceptCols, div=3):
-
         for col in df.columns.drop(exceptCols, errors='ignore'):
             max_ = df[col].max()
             min_ = df[col].min()
             coeff = (max_-min_)/div
-            df[col] = df[col].apply(lambda x: 0 if x <= min_+(coeff*1) else ( 1 if x <= min_+(coeff*2) else 2 ) )
+            df[col] = df[col].apply(lambda x: 0 if x <= (min_+(coeff*1)) else (1 if x <= min_+(coeff*2) else 2 ) )
 
         return df
 
@@ -363,7 +406,7 @@ class PreprocessingAll(Resource):
     # @jwt_required
     def post(self):
         try:
-            # process_flow()            
+            # process_flow()
             # process_wifi()
             # process_sales()
             
@@ -373,31 +416,42 @@ class PreprocessingAll(Resource):
             dfFlow = pd.read_csv(dir_flow)
             seg = self.openCsvFile(dir_segments)
 
+            print('leu os arquivos')
             dfFW = self.concatFlowAndWifi(dfFlow, dfWifi)
+            print('concatenou flow e wifi')
             df = self.concatFWAndSales(dfFW, dfSales)
+            df.to_csv(f"{current_app.config.get('PRE_PROCESSING_RAW')}/debug/arquivo_debug_0.csv", index=False)
+            print('concatenou com sales também' )
             df.dropna(inplace=True)
+            df.to_csv(f"{current_app.config.get('PRE_PROCESSING_RAW')}/debug/arquivo_debug_1.csv", index=False)
             df = self.transposeStores(df)
+            df.to_csv(f"{current_app.config.get('PRE_PROCESSING_RAW')}/debug/arquivo_debug_2.csv", index=False)
+            print('transposou')
             df = self.calculeTotalofNextHour(df)
+            df.to_csv(f"{current_app.config.get('PRE_PROCESSING_RAW')}/debug/arquivo_debug_3.csv", index=False)
+            print('calculou nexthour')
 
             df = self.calculeTotalofHour(df)
+            print('total of hour')
+            df.to_csv(f"{current_app.config.get('PRE_PROCESSING_RAW')}/debug/arquivo_debug_4.csv", index=False)
             df.boxplot(['Total'])
             plt.savefig(f"{current_app.config.get('PRE_PROCESSING_RAW')}/imgs/boxplot_total.png")
             y_kmeans = self.kmeansClustering(2, 'Hora', 'Total', df)
+            print('k means')
             # remove outliers class from dataframe
             for index, row in df.iterrows():
                 if y_kmeans[index]  == 1:
                     df.drop(index=(index), inplace=True)
-
             df.reset_index(drop=True, inplace=True)
             df.boxplot(['Total'])
             plt.savefig(f"{current_app.config.get('PRE_PROCESSING_RAW')}/imgs/boxplot_total_without_outliers.png")
+            print('removed outliers')
             dfFilter = self.filterHour(df,9,22)
             dfFilter.reset_index(drop=True, inplace=True)
             dfHour = self.updateTarget(dfFilter.copy())
             dfDay = self.transformToDay(dfFilter.copy())
             dfDay = self.updateTarget(dfDay)
             segHour = self.generateSegmentsDatasets(seg, dfHour, 7, self.seg_names_hour)
-
             for idx in self.seg_names_hour:
                 segHour[self.seg_names_hour[idx]] = self.updateTarget(segHour[self.seg_names_hour[idx]])
             segDay = self.generateSegmentsDatasets(seg, dfDay, 6, self.seg_names_day)
@@ -406,7 +460,6 @@ class PreprocessingAll(Resource):
             df = self.mergeAllDf([{'Hora' : dfHour}, {'Dia' : dfDay}, segHour, segDay])
             for idx in df:
                 df[idx] = self.finalizeProcessing(df[idx], idx)
-                
             for idx in df:
                 df[idx].to_csv(f"{current_app.config.get('PRE_PROCESSING_RAW')}/pre_processed/{idx}.csv", index=False)
             return 'ok'
