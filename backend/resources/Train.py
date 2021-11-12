@@ -158,7 +158,7 @@ class Train(Resource):
 
         # Metrics for Test
         initials_names = list(models.initials)
-        test_metrics = pd.DataFrame(columns=['Accuracy','AUC','Recall','Prec','F1','Kappa','MCC'], index=initials_names)
+        test_metrics = pd.DataFrame(columns=['Name', 'Model', 'Accuracy','AUC','Recall','Prec','F1','Kappa','MCC'], index=initials_names)
 
         for model in models.itertuples():
             y_pred = model.model.predict(X_test)
@@ -169,7 +169,9 @@ class Train(Resource):
                 aux = metrics.roc_auc_score(Y_test, y_pred_proba, average='weighted', multi_class='ovr')
             except Exception as _ :
                 aux = 'N/A'
-
+                
+            test_metrics.loc[model.initials, 'Name'] = model.name
+            test_metrics.loc[model.initials, 'Model'] = model.model
             test_metrics.loc[model.initials, 'Accuracy'] = metrics.accuracy_score(Y_test, y_pred)
             test_metrics.loc[model.initials, 'AUC'] = aux
             test_metrics.loc[model.initials, 'Recall'] = metrics.recall_score(Y_test, y_pred, average='macro')
@@ -233,20 +235,20 @@ class Train(Resource):
 
                     models_trained = self.trainingModels(METRIC_TRAIN, THRESHOLD)
                     lista.append(models_trained.shape)
-                    models_trained.to_excel(dir_+'trained.xlsx', index=False)
+                    models_trained.to_csv(dir_+'trained.csv', index=False)
 
                     models_tuned = self.tuningModels(models_trained, METRIC_TRAIN)
-                    models_tuned.to_excel(dir_+'tuned.xlsx', index=False)
+                    models_tuned.to_csv(dir_+'tuned.csv', index=False)
 
                     models_hyp = self.wilcoxonTest(train, models_tuned, TARGET_NAME, METRIC_WILCOXON)
-                    models_hyp.to_excel(dir_+'hypothesis.xlsx', index=False)
+                    models_hyp.to_csv(dir_+'hypothesis.csv', index=False)
 
                     results = self.testingModels(models_hyp, test, dir_, TARGET_NAME)
-                    results.to_excel(dir_+'results.xlsx', index=True)
+                    results.to_csv(dir_+'results.csv', index=True)
                 except Exception as _ :
                     print('Error')
 
-            return jsonify(lista)
+            return 'OK'
         except:
             traceback.print_exc()
             return {"msg": "Error on POST Train"}, 500

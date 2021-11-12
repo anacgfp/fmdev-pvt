@@ -117,6 +117,7 @@ class DataSourceDialog extends Component {
 
           {!!uploadedFiles.length && (
             <UploadFileList
+              typeOfData={this.props.typeOfData}
               files={uploadedFiles}
               onDelete={(uploadedFiles) => this.setState({ uploadedFiles })} />
           )}

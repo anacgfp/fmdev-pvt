@@ -85,8 +85,10 @@ class File(Resource):
     @jwt_required
     def delete(self, key):
         try:
+            typeOfData = request.args.get('typeOfData').lower()
             file = FileModel.query.filter_by(id=key).first()
-            path = f"{current_app.config.get('UPLOAD_FOLDER')}/{file.filename}"
+            path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/{typeOfData}/{file.filename}"
+            print(path)
             delete_file(path)
             
             db.session.delete(file)
