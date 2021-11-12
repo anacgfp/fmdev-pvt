@@ -48,6 +48,7 @@ api.add_resource(Datasource, '/data-source', '/data-source/<string:key>')
 api.add_resource(Download, '/download/<string:key>')
 api.add_resource(File, '/file', '/file/<string:key>')
 api.add_resource(TrainedModels, '/trained-model')
+api.add_resource(TrainedModelsImages, '/trained-model-image')
 
 api.add_resource(PreprocessingAll, '/prepr')
 api.add_resource(Train, '/train')

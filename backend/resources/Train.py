@@ -136,7 +136,7 @@ class Train(Resource):
             result[feature_name] = (df[feature_name] - min_value) / ((max_value - min_value) if not (max_value - min_value) == 0 else 1)
         return result
     
-    def testingModels(self, models, test, dir, TARGET_NAME):
+    def testingModels(self, models, test, dir_, TARGET_NAME):
         print('testing models')
         # Get Test Data
         test_normalized = self.normalize(test, TARGET_NAME)
@@ -150,10 +150,9 @@ class Train(Resource):
                                 display_labels=['Low','Medium','High'],
                                 cmap=plt.cm.Blues,
                                 normalize='true')
-            baseDir = f"{current_app.config.get('TRAIN_MODELS')}/imgs"
             plt.grid(False)
             plt.title(model.name)
-            plt.savefig(baseDir+model.name+'.png')
+            plt.savefig(dir_+model.initials+'.png')
             plt.pause(0.05)
 
         # Metrics for Test

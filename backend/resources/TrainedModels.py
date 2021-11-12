@@ -7,7 +7,6 @@ from flask_restful import Resource
 from flask import request, current_app, send_file
 from flask_jwt_extended import jwt_required
 
-
 # retorna os modelos treinados
 class TrainedModels(Resource):
     
@@ -26,8 +25,8 @@ class TrainedModels(Resource):
 
             objeto_retorno = {}
             for t in param3:
-                path = f"{experimentosDir}/{period}/{feature}/{t}/results.xlsx" #TODO mudar pra ser um csv
-                df = pd.read_excel(path) #TODO mudar pra ler csv
+                path = f"{experimentosDir}/{period}/{feature}/{t}/results.csv" 
+                df = pd.read_csv(path) 
                 obj = {}
                 objeto_retorno[t] = []
                 for index, row in df.iterrows():
@@ -49,11 +48,22 @@ class TrainedModels(Resource):
         
 class TrainedModelsImages(Resource):
     
-    @jwt_required
-    def get(self):
+    # @jwt_required
+    def post(self):
         try:
-            filename='a'
-            return send_file(filename, mimetype='image/png')
+            period = request.args.get('period')
+            feature = request.args.get('feature')
+            time = request.args.get('time') #can be 1, 2, 3
+            time_types = ['Total (T+1)', 'Total (T+2)', 'Total (T+3)']
+            initials = request.args.get('initials')
+
+            path = f"{current_app.config.get('TRAIN_MODELS')}/Experimentos/{period}/{feature}/{time_types[int(time)-1]}/{initials}.png"
+            param1 = ['Dia', 'Hora']
+            param2 = ['ALL', 'FS']
+            if period not in param1 or feature not in param2 or time not in ['1', '2', '3']:
+                return {"msg": "Periodo ou feature Invalido"}, 500
+
+            return send_file(path, mimetype='image/png')
         except:
             traceback.print_exc()
             return None, 500
