@@ -25,6 +25,7 @@ import { PRE_PROCESSING_RAW, TRAIN_PIPELINES } from '../../constants';
 import AlertDialog from '../../components/AlertDialog';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import api from '../../services/api';
+import './styles.css';
 
 class TrainModel extends Component {
 
@@ -36,13 +37,40 @@ class TrainModel extends Component {
       anchorEl: null,
       models: {},
       loading: true,
+      period: 'Dia',
+      feature: 'FS',
     };
   }
   
-  getModels = (period, feature) => {
+  getModels = () => {
+    const { period, feature } = this.state;
 
     api
       .post(`trained-model?period=${period}&feature=${feature}`)
+      .then(response => {
+        console.log(response.data);
+        this.setState({ models: response.data});
+      })
+      .finally( this.setState( { loading: false }));
+  };
+
+  changeFeature = () => {
+    const featureSelect = document.getElementById('feature');
+    let featureSelected = featureSelect.value;
+    this.setState({ feature: featureSelected });
+  }
+
+  changePeriod = () => {
+    const periodSelect = document.getElementById('period');
+    let periodSelected = periodSelect.value;
+    this.setState({ period: periodSelected });
+  }
+
+  getModelsImg = (initials) => {
+    const { period, feature } = this.state;
+
+    api
+      .post(`trained-model?period=${period}&feature=${feature}&initials=${initials}`)
       .then(response => {
         this.setState({ models: response.data});
       })
@@ -50,7 +78,7 @@ class TrainModel extends Component {
   };
 
   componentDidMount() {
-    this.getModels('Dia', 'FS');
+    this.getModels();
   }
 
   renderItem = (item, idx, typeOfModel) => (
@@ -72,12 +100,6 @@ class TrainModel extends Component {
     this.setState({ anchorEl: event.currentTarget, itemSelected: item });
   };
 
-  deleteModel = () => {
-    const { itemSelected } = this.state;
-
-    this.props.deleteTrainModel(itemSelected.model_id);
-  }
-
   renderMenuActions = () => {
     let actions = [
       {
@@ -89,11 +111,6 @@ class TrainModel extends Component {
         action: 'visualize_matrix',
         label: 'Matriz de confusão',
         icon: <DownloadIcon size={16} color={primaryColor} />
-      },
-      {
-        action: 'delete_model',
-        label: 'Excluir modelo',
-        icon: <TrashIcon size={16} color={primaryColor} />
       }
     ];
 
@@ -130,21 +147,13 @@ class TrainModel extends Component {
     });
   }
 
-  handleMenuItemClick = (option, event, ) => {
-    const { model_id } = this.state.itemSelected;
-
+  handleMenuItemClick = (option, event ) => {
     if (option.action === 'download_pipeline') {
       this.createAndDownloadFile(`${this.state.itemSelected.Name}.txt`, `${this.state.itemSelected.Model}`);
     }
 
     if (option.action === 'visualize_matrix') {
       console.log('visualizar matriz de confusão. get matriz e abrir em nova aba')
-    }
-
-    if (option.action === 'delete_model') {
-      this.props.setDialog('alert', {
-        description: 'Todos os dados gerados pelo modelo serão removidos. Deseja continuar?'
-      });
     }
 
     this.handleMenuItemClose();
@@ -163,7 +172,6 @@ class TrainModel extends Component {
     document.body.removeChild(element);
   }
   
-  
   render() {
     const typesOfModels = ['Total (T+1)', 'Total (T+2)', 'Total (T+3)']
     const data = this.state.models || [];
@@ -172,8 +180,24 @@ class TrainModel extends Component {
       <PerfectScrollbar style={{ width: '100%', overflowX: 'auto' }}>
         <ConfigContainer size='big' style={{ color: '#000' }}>
 
-          <Header>
+          <Header >
             <h1>Modelos Salvos</h1>
+            <div className='filtros'>
+            <div className='abc'>
+              <label className='abc-right'>Modelo de previsão para:</label>
+              <select name="period" id="period" onChange={this.changePeriod}>
+                <option value="Dia">Dia</option>
+                <option value="Hora">Hora</option>
+              </select>
+            </div>
+            <div className='abc'>
+              <label className='abc-right'>Modelo de previsão com:</label>
+              <select name="feature" id="feature" onChange={this.changeFeature}>
+                <option value="FS">Seleção de Features</option>
+                <option value="ALL">ALL</option>
+              </select>
+            </div>
+            </div>
           </Header>
 
 

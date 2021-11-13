@@ -27,10 +27,10 @@ class TrainedModels(Resource):
             for t in param3:
                 path = f"{experimentosDir}/{period}/{feature}/{t}/results.csv" 
                 df = pd.read_csv(path) 
-                print(df.head(0))
-                obj = {}
                 objeto_retorno[t] = []
                 for _, row in df.iterrows():
+                    obj = {}
+                    print('aaa', row['Name'])
                     obj['Accuracy'] = row['Accuracy']
                     obj['AUC'] = row['AUC']
                     obj['Recall'] = row['Recall']
@@ -40,7 +40,7 @@ class TrainedModels(Resource):
                     obj['MCC'] = row['MCC']
                     obj['Name'] = row['Name']
                     obj['Model'] = row['Model']
-                    obj['initials'] = row['Unnamed 0']
+                    obj['initials'] = row['Unnamed: 0']
                     objeto_retorno[t].append(obj)
             return objeto_retorno
         except:
