@@ -24,6 +24,7 @@ import { primaryColor } from '../../styles/global';
 import { PRE_PROCESSING_RAW, TRAIN_PIPELINES } from '../../constants';
 import AlertDialog from '../../components/AlertDialog';
 import { ProgressSpinner } from 'primereact/progressspinner';
+import api from '../../services/api';
 
 class TrainModel extends Component {
 
@@ -32,22 +33,33 @@ class TrainModel extends Component {
 
     this.state = {
       itemSelected: null,
-      anchorEl: null
+      anchorEl: null,
+      models: {},
+      loading: true,
     };
   }
+  
+  getModels = (period, feature) => {
+
+    api
+      .post(`trained-model?period=${period}&feature=${feature}`)
+      .then(response => {
+        this.setState({ models: response.data});
+      })
+      .finally( this.setState( { loading: false }));
+  };
 
   componentDidMount() {
-    this.props.getTrainModel();
+    this.getModels('Dia', 'FS');
   }
 
-  renderItem = (item, idx) => (
-    <tr key={idx}>
-      <FirstItemColumn>{item.name}</FirstItemColumn>
-      <ItemColumn>{item.description}</ItemColumn>
-      <ItemColumn>{moment(item.created_at).format('DD/MM/YYYY HH:mm:ss')}</ItemColumn>
-      <ItemColumn>{item.score ? item.score.toFixed(2) : null}</ItemColumn>
-      <ItemColumn>{item.last_predict_at ? moment(item.last_predict_at).format('DD/MM/YYYY HH:mm:ss') : null}</ItemColumn>
-      <ItemColumn>{item.qtd_predict ? item.qtd_predict : 0}</ItemColumn>
+  renderItem = (item, idx, typeOfModel) => (
+    <tr key={idx}>      
+      <FirstItemColumn>{typeOfModel}</FirstItemColumn>
+      <ItemColumn>{item.Name}</ItemColumn>
+      <ItemColumn>{item.Accuracy}</ItemColumn>
+      <ItemColumn>{item.F1}</ItemColumn>
+      <ItemColumn>{item.Prec}</ItemColumn>
       <ItemColumn isClickable onClick={this.handleClickMenu.bind(this, item)}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><MoreIcon size={16} /></div>
       </ItemColumn>
@@ -69,24 +81,14 @@ class TrainModel extends Component {
   renderMenuActions = () => {
     let actions = [
       {
-        action: 'download_data',
-        label: 'Baixar dados do modelo',
-        icon: <DownloadIcon size={16} color={primaryColor} />
-      },
-      {
         action: 'download_pipeline',
         label: 'Baixar código do modelo',
         icon: <CodeIcon size={16} color={primaryColor} />
       },
       {
-        action: 'copy_url',
-        label: 'Copiar URL do modelo',
-        icon: <CopyIcon size={16} color={primaryColor} />
-      },
-      {
-        action: 'generate_key',
-        label: 'Gerar nova chave de API',
-        icon: <KeyIcon size={16} color={primaryColor} />
+        action: 'visualize_matrix',
+        label: 'Matriz de confusão',
+        icon: <DownloadIcon size={16} color={primaryColor} />
       },
       {
         action: 'delete_model',
@@ -128,15 +130,15 @@ class TrainModel extends Component {
     });
   }
 
-  handleMenuItemClick = (option, event) => {
+  handleMenuItemClick = (option, event, ) => {
     const { model_id } = this.state.itemSelected;
 
-    if (option.action === 'download_data') {
-      this.props.getDownload(model_id, PRE_PROCESSING_RAW);
+    if (option.action === 'download_pipeline') {
+      this.createAndDownloadFile(`${this.state.itemSelected.Name}.txt`, `${this.state.itemSelected.Model}`);
     }
 
-    if (option.action === 'download_pipeline') {
-      this.props.getDownload(model_id, TRAIN_PIPELINES);
+    if (option.action === 'visualize_matrix') {
+      console.log('visualizar matriz de confusão. get matriz e abrir em nova aba')
     }
 
     if (option.action === 'delete_model') {
@@ -145,20 +147,27 @@ class TrainModel extends Component {
       });
     }
 
-    if (option.action === 'copy_url') {
-      this.props.getModelCopy(model_id)
-    }
-
-    if (option.action === 'generate_key') {
-      this.props.putTrainModel(model_id, { data: {}, action: 'GENERATE_KEY' });
-    }
-
     this.handleMenuItemClose();
   };
 
+  createAndDownloadFile(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+  
+    element.style.display = 'none';
+    document.body.appendChild(element);
+  
+    element.click();
+  
+    document.body.removeChild(element);
+  }
+  
+  
   render() {
-    const { data, loading } = this.props.train_model;
-
+    const typesOfModels = ['Total (T+1)', 'Total (T+2)', 'Total (T+3)']
+    const data = this.state.models || [];
+    const loading = this.state.loading;
     return (
       <PerfectScrollbar style={{ width: '100%', overflowX: 'auto' }}>
         <ConfigContainer size='big' style={{ color: '#000' }}>
@@ -168,7 +177,7 @@ class TrainModel extends Component {
           </Header>
 
 
-          {!data.length && !loading ?
+          {Object.keys(data).length === 0 && !loading ?
             <StatusMsgContainer> Sem modelos salvos para serem exibidos. </StatusMsgContainer>
             : null}
 
@@ -178,22 +187,27 @@ class TrainModel extends Component {
             </LoadingContainer>
             : null}
 
-          {data.length && !loading ?
+          {Object.keys(data).length !== 0 && !loading ?
             <Table>
               <thead>
                 <tr>
-                  <FirstHeaderColumn>Nome</FirstHeaderColumn>
-                  <HeaderColumn>Descrição</HeaderColumn>
-                  <HeaderColumn>Criado em</HeaderColumn>
-                  <HeaderColumn>Acurácia de teste</HeaderColumn>
-                  <HeaderColumn>Última predição em</HeaderColumn>
-                  <HeaderColumn>Predições realizadas</HeaderColumn>
+                  <FirstHeaderColumn>Tipo de modelo</FirstHeaderColumn>
+                  <HeaderColumn>Nome</HeaderColumn>
+                  <HeaderColumn>Acurácia</HeaderColumn>
+                  <HeaderColumn>Escore F1</HeaderColumn>
+                  <HeaderColumn>Precisão</HeaderColumn>
                   <HeaderColumn><div style={{ display: 'flex', justifyContent: 'center' }}>Ações</div></HeaderColumn>
                 </tr>
               </thead>
 
               <tbody>
-                {data.map((item, idx) => this.renderItem(item, idx))}
+                {
+                  typesOfModels.map((item) => {
+                    return data[item].map((model, idx) => {
+                      return this.renderItem(model, idx, item);
+                    })
+                  })
+                }
               </tbody>
             </Table>
             : null}

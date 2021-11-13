@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component } from  'react';
 import { CardContainer } from './styles';
 import { Creators as DialogActions } from '../../store/ducks/dialog';
 import { Creators as DataSourceActions } from '../../store/ducks/data_source';
