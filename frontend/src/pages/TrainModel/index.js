@@ -1,6 +1,7 @@
 import * as moment from 'moment';
 import React, { Component } from 'react';
 import { ConfigContainer } from '../../styles/ConfigContainer';
+import { default as CustomButton } from '../../styles/Button';
 import {
   Header, Table, HeaderColumn, ItemColumn,
   FirstHeaderColumn, FirstItemColumn,
@@ -37,42 +38,32 @@ class TrainModel extends Component {
       anchorEl: null,
       models: {},
       loading: true,
-      period: 'Dia',
-      feature: 'FS',
     };
   }
   
   getModels = () => {
-    const { period, feature } = this.state;
+    const period = document.getElementById('period').value;
+    const feature = document.getElementById('feature').value;
 
     api
       .post(`trained-model?period=${period}&feature=${feature}`)
       .then(response => {
-        console.log(response.data);
         this.setState({ models: response.data});
       })
       .finally( this.setState( { loading: false }));
   };
 
-  changeFeature = () => {
-    const featureSelect = document.getElementById('feature');
-    let featureSelected = featureSelect.value;
-    this.setState({ feature: featureSelected });
-  }
-
-  changePeriod = () => {
-    const periodSelect = document.getElementById('period');
-    let periodSelected = periodSelect.value;
-    this.setState({ period: periodSelected });
-  }
-
   getModelsImg = (initials) => {
-    const { period, feature } = this.state;
-
+    const period = document.getElementById('period').value;
+    const feature = document.getElementById('feature').value;
+    const index = this.state.itemSelected.itemIdx;
     api
-      .post(`trained-model?period=${period}&feature=${feature}&initials=${initials}`)
+      .post(`trained-model-image?period=${period}&feature=${feature}&time=${index}&initials=${initials}`, {responseType: 'blob'})
       .then(response => {
-        this.setState({ models: response.data});
+        var a = document.createElement("a"); //Create <a>
+        a.href = "data:image/png;base64," + response.data; //Image Base64 Goes here
+        a.download = "Image.png"; //File name Here
+        a.click(); //Downloaded file
       })
       .finally( this.setState( { loading: false }));
   };
@@ -153,7 +144,7 @@ class TrainModel extends Component {
     }
 
     if (option.action === 'visualize_matrix') {
-      console.log('visualizar matriz de confusão. get matriz e abrir em nova aba')
+      this.getModelsImg(this.state.itemSelected.initials);
     }
 
     this.handleMenuItemClose();
@@ -176,6 +167,7 @@ class TrainModel extends Component {
     const typesOfModels = ['Total (T+1)', 'Total (T+2)', 'Total (T+3)']
     const data = this.state.models || [];
     const loading = this.state.loading;
+
     return (
       <PerfectScrollbar style={{ width: '100%', overflowX: 'auto' }}>
         <ConfigContainer size='big' style={{ color: '#000' }}>
@@ -193,11 +185,14 @@ class TrainModel extends Component {
             <div className='abc'>
               <label className='abc-right'>Modelo de previsão com:</label>
               <select name="feature" id="feature" onChange={this.changeFeature}>
-                <option value="FS">Seleção de Features</option>
                 <option value="ALL">ALL</option>
+                <option value="FS">Seleção de Features</option>
               </select>
             </div>
+            <CustomButton className='okbutton'              
+              filled={false} onClick={this.getModels}>OK</CustomButton>
             </div>
+
           </Header>
 
 

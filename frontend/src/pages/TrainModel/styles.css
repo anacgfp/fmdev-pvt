@@ -7,6 +7,12 @@
   .filtros {
     display: flex;
     flex-direction: row;
+    align-items: flex-end;
+  }
+  .okbutton {
+    margin-left: 2rem;
+    height: fit-content;
+    padding: 0;
   }
   .abc {
     display: flex;
