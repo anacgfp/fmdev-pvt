@@ -175,22 +175,22 @@ class TrainModel extends Component {
           <Header >
             <h1>Modelos Salvos</h1>
             <div className='filtros'>
-            <div className='abc'>
-              <label className='abc-right'>Modelo de previsão para:</label>
-              <select name="period" id="period" onChange={this.changePeriod}>
+            <div className='dropdown-style'>
+              <label className='dropdown-label'>Modelo de previsão para:</label>
+              <select name="period" id="period" onChange={this.changePeriod} className='select-style'>
                 <option value="Dia">Dia</option>
                 <option value="Hora">Hora</option>
               </select>
             </div>
-            <div className='abc'>
-              <label className='abc-right'>Modelo de previsão com:</label>
-              <select name="feature" id="feature" onChange={this.changeFeature}>
+            <div className='dropdown-style'>
+              <label className='dropdown-label'>Modelo de previsão com:</label>
+              <select name="feature" id="feature" onChange={this.changeFeature} className='select-style'>
                 <option value="ALL">ALL</option>
                 <option value="FS">Seleção de Features</option>
               </select>
             </div>
-            <CustomButton className='okbutton'              
-              filled={false} onClick={this.getModels}>OK</CustomButton>
+            <CustomButton className='button-style'              
+              filled={false} onClick={this.getModels}>Confirmar</CustomButton>
             </div>
 
           </Header>

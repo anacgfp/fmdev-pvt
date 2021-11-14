@@ -13,7 +13,7 @@ class UploadFileList extends Component {
     let newUploadedFiles = [];
     const typeOfData = this.props.typeOfData;
 
-    await api.delete(`file?typeOfData=${typeOfData}/${id}`);
+    await api.delete(`file/${id}?typeOfData=${typeOfData}`);
 
     newUploadedFiles = this.props.files.filter(file => file.id !== id);
 

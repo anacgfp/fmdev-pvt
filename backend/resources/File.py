@@ -51,15 +51,15 @@ class File(Resource):
             if 'file' not in request.files:
                 return {'msg': 'No file part'}, 500
             file = request.files['file']
-            typeOfData = request.args.get('typeOfData').lower()
+            typeOfData = request.args.get('typeOfData').upper()
             file.filename = self.sanitize_filename(file.filename)
-            
-            if typeOfData == 'WIFI' and 'hotspot' not in file.filename:
-                return {'msg': 'not a valid file for wifi'}, 422
-            if typeOfData == 'FLOW' and 'fluxo' not in file.filename:
-                return {'msg': 'not a valid file for flow'}, 422
-            if typeOfData == 'SALES' and 'ticket' not in file.filename:
-                return {'msg': 'not a valid file for sales'}, 422
+            print('fluxo' not in file.filename, file.filename, typeOfData)
+            if typeOfData == 'WIFI' and 'HOTSPOT' not in file.filename:
+                return {'msg': 'not a valid file for wifi'}, 500
+            if typeOfData == 'FLOW' and 'FLUXO' not in file.filename:
+                return {'msg': 'not a valid file for flow'}, 500
+            if typeOfData == 'SALES' and 'TICKET' not in file.filename:
+                return {'msg': 'not a valid file for sales'}, 500
             extension = get_extension_from_path(file.filename)
             upload_folder = f"{current_app.config.get('PRE_PROCESSING_RAW')}/{typeOfData}"
             if file and self.allowed_file(file.filename):
@@ -85,7 +85,8 @@ class File(Resource):
     @jwt_required
     def delete(self, key):
         try:
-            typeOfData = request.args.get('typeOfData').lower()
+            typeOfData = request.args.get('typeOfData')
+            print(typeOfData)
             file = FileModel.query.filter_by(id=key).first()
             path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/{typeOfData}/{file.filename}"
             print(path)

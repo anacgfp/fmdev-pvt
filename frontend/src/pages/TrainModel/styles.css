@@ -7,21 +7,27 @@
   .filtros {
     display: flex;
     flex-direction: row;
-    align-items: flex-end;
+    align-items: center;
   }
-  .okbutton {
+  .button-style {
     margin-left: 2rem;
     height: fit-content;
-    padding: 0;
+    border-radius: 2px;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
   }
-  .abc {
+  .dropdown-style {
     display: flex;
     flex-direction: row;
+    align-items: center;
     padding-left: 2rem;
-
   }
-  .abc-right {
+  .dropdown-label {
     padding-right: 1rem;
+  }
+  .select-style {
+    height: 33px;
+    font-size: 15px;
   }
   
   .slider {

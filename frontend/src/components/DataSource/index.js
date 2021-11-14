@@ -204,17 +204,20 @@ class DataSource extends Component {
                     display: 'flex', flexDirection: 'column', boxShadow: '4px 4px 4px 0px rgba(0, 0, 0, 0.1)',
                     borderRadius: '0 5px 5px 0'}}>
             <div style={{display: 'flex', justifyContent: 'center', marginTop: '32px'}}>
-              <CustomButton 
+              <CustomButton
+              disabled={loading}
               style={{padding: '1px', height: 'max-content', minHeight: '60px', margin: '5px', width: '80%'}}
               filled={false} onClick={this.addDataSource}>Adicionar fonte de dados</CustomButton>
             </div>
         <div style={{display: 'flex', justifyContent: 'center'}}>
               <CustomButton 
+              disabled={loading}
               style={{padding: '1px', height: 'max-content', minHeight: '60px', margin: '5px', width: '80%'}}
               filled={false} onClick={this.startPreProcessing}>Iniciar pré-processamento</CustomButton>
             </div>
             <div style={{display: 'flex', justifyContent: 'center'}}>
               <CustomButton 
+              disabled={loading}
               style={{padding: '1px', height: 'max-content', minHeight: '60px', margin: '5px', width: '80%'}}
               filled={true} onClick={this.generateModel}>Gerar Modelo</CustomButton>
             </div>

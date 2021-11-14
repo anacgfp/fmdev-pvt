@@ -15,7 +15,7 @@ from utils import preprocessing_utils
 
 def process_flow():
     print('flow processing started')
-    files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/flow/*.*"
+    files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/FLOW/*.*"
     files = preprocessing_utils.read_files(files_path)
     df = preprocessing_utils.import_json(files[0])
 
@@ -28,7 +28,7 @@ def process_flow():
     
 def process_wifi():
     print('wifi processing started')
-    files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/wifi/*.*"
+    files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/WIFI/*.*"
     files = preprocessing_utils.read_files(files_path)
 
     df = preprocessing_utils.append_files(files)
@@ -53,7 +53,7 @@ def process_wifi():
 
 def process_sales():
     print('sales processing started')
-    files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/sales/*.*"
+    files_path = f"{current_app.config.get('PRE_PROCESSING_RAW')}/SALES/*.*"
     files = preprocessing_utils.read_files(files_path)
     df = preprocessing_utils.append_files_sales(files)
     df = preprocessing_utils.select_columns(df, ['Name', 'Total', 'Date'])
