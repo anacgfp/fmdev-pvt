@@ -406,9 +406,9 @@ class PreprocessingAll(Resource):
     # @jwt_required
     def post(self):
         try:
-            # process_flow()
-            # process_wifi()
-            # process_sales()
+            process_flow()
+            process_wifi()
+            process_sales()
             
             dir_wifi, dir_sales, dir_flow, dir_segments = self.read_files()
             dfWifi = pd.read_csv(dir_wifi)
@@ -416,24 +416,14 @@ class PreprocessingAll(Resource):
             dfFlow = pd.read_csv(dir_flow)
             seg = self.openCsvFile(dir_segments)
 
-            print('leu os arquivos')
             dfFW = self.concatFlowAndWifi(dfFlow, dfWifi)
-            print('concatenou flow e wifi')
             df = self.concatFWAndSales(dfFW, dfSales)
-            df.to_csv(f"{current_app.config.get('PRE_PROCESSING_RAW')}/debug/arquivo_debug_0.csv", index=False)
-            print('concatenou com sales também' )
             df.dropna(inplace=True)
-            df.to_csv(f"{current_app.config.get('PRE_PROCESSING_RAW')}/debug/arquivo_debug_1.csv", index=False)
             df = self.transposeStores(df)
-            df.to_csv(f"{current_app.config.get('PRE_PROCESSING_RAW')}/debug/arquivo_debug_2.csv", index=False)
-            print('transposou')
             df = self.calculeTotalofNextHour(df)
-            df.to_csv(f"{current_app.config.get('PRE_PROCESSING_RAW')}/debug/arquivo_debug_3.csv", index=False)
             print('calculou nexthour')
 
             df = self.calculeTotalofHour(df)
-            print('total of hour')
-            df.to_csv(f"{current_app.config.get('PRE_PROCESSING_RAW')}/debug/arquivo_debug_4.csv", index=False)
             df.boxplot(['Total'])
             plt.savefig(f"{current_app.config.get('PRE_PROCESSING_RAW')}/imgs/boxplot_total.png")
             y_kmeans = self.kmeansClustering(2, 'Hora', 'Total', df)

@@ -140,10 +140,8 @@ class DataSource extends Component {
         api
         .post('prepr')
         .then(response => {
-          console.log('resposta');
         })
         .catch((e) => {
-          console.log(e);
         })
         .finally(() => {
           this.setState( {loading: false, loadingMessage: ''});
@@ -219,7 +217,7 @@ class DataSource extends Component {
               <CustomButton 
               disabled={loading}
               style={{padding: '1px', height: 'max-content', minHeight: '60px', margin: '5px', width: '80%'}}
-              filled={true} onClick={this.generateModel}>Gerar Modelo</CustomButton>
+              filled={false} onClick={this.generateModel}>Gerar Modelo</CustomButton>
             </div>
         </div>
         <MoodleConfigDialog />

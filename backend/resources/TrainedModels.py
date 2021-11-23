@@ -1,14 +1,19 @@
 import json
 import joblib
 import traceback
+from matplotlib import pyplot as plt
 from numpy.core.numeric import NaN
 import pandas as pd
+from pycaret.classification import *
 from utils import utils
 from flask_restful import Resource
 from flask import request, current_app, send_file
 from flask_jwt_extended import jwt_required
 from flask import jsonify
 import base64
+import os
+from flask import send_file
+
 
 # retorna os modelos treinados
 class TrainedModels(Resource):
@@ -28,17 +33,20 @@ class TrainedModels(Resource):
 
             objeto_retorno = {}
             for index, t in enumerate(param3):
-                path = f"{experimentosDir}/{period}/{feature}/{t}/results.csv" 
-                df = pd.read_csv(path) 
+                try:
+                    path = f"{experimentosDir}/{period}/{feature}/{t}/results.csv" 
+                    df = pd.read_csv(path) 
+                except:
+                    continue
                 objeto_retorno[t] = []
                 for _, row in df.iterrows():
                     obj = {}
-                    obj['Accuracy'] = row['Accuracy'] if row['Accuracy'] else ""
-                    obj['Recall'] = row['Recall'] if row['Recall'] else ""
-                    obj['Prec'] = row['Prec'] if row['Prec'] else ""
-                    obj['F1'] = row['F1'] if row['F1'] else ""
-                    obj['Kappa'] = row['Kappa'] if row['Kappa'] else ""
-                    obj['MCC'] = row['MCC'] if row['MCC'] else ""
+                    obj['Accuracy'] = round(row['Accuracy'], 3)
+                    obj['Recall'] = round(row['Recall'], 3)
+                    obj['Prec'] = round(row['Prec'], 3)
+                    obj['F1'] = round(row['F1'], 3)
+                    obj['Kappa'] = round(row['Kappa'], 3)
+                    obj['MCC'] = round(row['MCC'], 3)
                     obj['Name'] = row['Name'] if row['Name'] else ""
                     obj['Model'] = row['Model'] if row['Model'] else ""
                     obj['initials'] = row['Unnamed: 0'] if row['Unnamed: 0'] else ""
@@ -49,10 +57,7 @@ class TrainedModels(Resource):
             traceback.print_exc()
             return None, 500
         
-        
-        
-class TrainedModelsImages(Resource):
-    
+class Prevision(Resource):
     # @jwt_required
     def post(self):
         try:
@@ -61,8 +66,31 @@ class TrainedModelsImages(Resource):
             time = request.args.get('time') #can be 1, 2, 3
             time_types = ['Total (T+1)', 'Total (T+2)', 'Total (T+3)']
             initials = request.args.get('initials')
+            model = load_model('data/models/Experimentos/Dia/ALL/Total (T+2)/et')
+            data = pd.read_csv('data/pre_processing/pre_processed/Dia.csv')
+            pred_holdout = predict_model(model, data)
+            pred_holdout = pred_holdout[['Dia', 'Total (T+1)', 'Total (T+2)', 'Total (T+3)']]
+            pred_holdout.to_csv('data/models/Experimentos/Dia/ALL/Total (T+2)/pred.csv')
+            return pred_holdout.to_json() 
+            
+        except:
+            traceback.print_exc()
+            return None, 500          
 
-            path = f"{current_app.config.get('TRAIN_MODELS')}/Experimentos/{period}/{feature}/{time_types[int(time)-1]}/{initials}.png"
+            
+        
+class TrainedModelsImages(Resource):    
+    # @jwt_required
+    def post(self):
+        try:
+            period = request.args.get('period')
+            feature = request.args.get('feature')
+            time = request.args.get('time') #can be 1, 2, 3
+            time_types = ['Total (T+1)', 'Total (T+2)', 'Total (T+3)']
+            initials = request.args.get('initials')
+            
+            basePath = f"{current_app.config.get('TRAIN_MODELS')}/Experimentos/{period}/{feature}/{time_types[int(time)-1]}"
+            path = f"{basePath}/{initials}_confusion_matrix.png"
             param1 = ['Dia', 'Hora']
             param2 = ['ALL', 'FS']
             if period not in param1 or feature not in param2 or time not in ['1', '2', '3']:
@@ -77,5 +105,25 @@ class TrainedModelsImages(Resource):
             traceback.print_exc()
             return None, 500
         
-        
+class TrainedModelPipeline(Resource):    
+    # @jwt_required
+    def post(self):
+        try:
+            period = request.args.get('period')
+            feature = request.args.get('feature')
+            time = request.args.get('time') #can be 1, 2, 3
+            time_types = ['Total (T+1)', 'Total (T+2)', 'Total (T+3)']
+            initials = request.args.get('initials')
+            
+            basePath = f"{current_app.config.get('TRAIN_MODELS')}/Experimentos/{period}/{feature}/{time_types[int(time)-1]}"
+            path = f"{basePath}/{initials}.pkl"
+            param1 = ['Dia', 'Hora']
+            param2 = ['ALL', 'FS']
+            if period not in param1 or feature not in param2 or time not in ['1', '2', '3']:
+                return {"msg": "Periodo ou feature Invalido"}, 500
+            return send_file(path, attachment_filename='model.pkl')
 
+        except:
+            traceback.print_exc()
+            return None, 500
+        

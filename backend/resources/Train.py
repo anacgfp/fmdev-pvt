@@ -59,16 +59,9 @@ class Train(Resource):
     def tuningModels(self, models_trained, METRIC_TRAIN):
         print('tuned')
         models = pd.DataFrame(columns=['initials','name','model','score'])
-        print(models.head(0))
-        a = 0
         for model in models_trained.itertuples():
-            a +=1
-            print('dasdas')
             tuned = tune_model(model.model, optimize = METRIC_TRAIN, n_iter=30, verbose= False )
-            print('primeiro', a)
             models.loc[models.shape[0]] = [ model.initials, model.name, tuned, pull()[METRIC_TRAIN].Mean ]
-            print('segundo', a)
-        print('chegou', a)
         models.sort_values(by=['score'], ascending=False, inplace=True, ignore_index=True)
         return models
 
@@ -135,7 +128,7 @@ class Train(Resource):
             min_value = df[feature_name].min()
             result[feature_name] = (df[feature_name] - min_value) / ((max_value - min_value) if not (max_value - min_value) == 0 else 1)
         return result
-    
+ 
     def testingModels(self, models, test, dir_, TARGET_NAME):
         print('testing models')
         # Get Test Data
@@ -152,16 +145,16 @@ class Train(Resource):
                                 normalize='true')
             plt.grid(False)
             plt.title(model.name)
-            plt.savefig(dir_+model.initials+'.png')
-            plt.pause(0.05)
-
+            plt.savefig(dir_+model.initials+'_confusion_matrix.png')
+            plt.close()
+            
         # Metrics for Test
         initials_names = list(models.initials)
         test_metrics = pd.DataFrame(columns=['Name', 'Model', 'Accuracy','AUC','Recall','Prec','F1','Kappa','MCC'], index=initials_names)
 
         for model in models.itertuples():
             y_pred = model.model.predict(X_test)
-
+            save_model(model.model, dir_ + model.initials)
             aux = None
             try :
                 y_pred_proba = model.model.predict_proba(X_test)
@@ -198,7 +191,7 @@ class Train(Resource):
                 'dataset' : [dia.split('.')[0], hora.split('.')[0]],
                 'feature' : ['ALL', 'FS'],
                 'target' : ['Total (T+1)','Total (T+2)','Total (T+3)']
-            }            
+            }          
 
             PARAMS = it.product(*(dic[idx] for idx in dic))
             # Declaration of Constants
@@ -214,13 +207,13 @@ class Train(Resource):
             a = []
             for param in PARAMS:
                 # Get params
+                type_time = param[0].split('/')[-1]
+                dir_ = f"{current_app.config.get('TRAIN_MODELS')}/Experimentos/{type_time}/{param[1]}/{param[2]}/"
+                os.makedirs(dir_, exist_ok=True)
                 df = pd.read_csv(param[0]+'.csv')
                 TARGET_NAME = param[2]
                 df.drop(columns=[x for x in TARGETS if x != TARGET_NAME], axis=1, inplace=True)
                 FEATURES_NAME = list(df.columns.difference([TARGET_NAME]))
-                type_time = param[0].split('/')[-1]
-                dir_ = f"{current_app.config.get('TRAIN_MODELS')}/Experimentos/{type_time}/{param[1]}/{param[2]}/"
-                os.makedirs(dir_, exist_ok=True)
 
                 # Init Modeling
                 if param[1] == 'FS':

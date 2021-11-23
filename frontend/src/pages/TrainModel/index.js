@@ -68,6 +68,21 @@ class TrainModel extends Component {
       .finally( this.setState( { loading: false }));
   };
 
+  getModelsPipeline = (initials) => {
+    const period = document.getElementById('period').value;
+    const feature = document.getElementById('feature').value;
+    const index = this.state.itemSelected.itemIdx;
+    api
+      .post(`model-pipeline?period=${period}&feature=${feature}&time=${index}&initials=${initials}`)
+      .then(response => {
+        this.createAndDownloadFile(initials + '.pkl', response.data)
+      })
+      .finally( this.setState( { loading: false }));
+  };
+
+
+
+
   componentDidMount() {
     this.getModels();
   }
@@ -102,7 +117,12 @@ class TrainModel extends Component {
         action: 'visualize_matrix',
         label: 'Matriz de confusão',
         icon: <DownloadIcon size={16} color={primaryColor} />
-      }
+      },
+      {
+        action: 'download_model_pipeline',
+        label: 'Pipeline do Modelo',
+        icon: <CopyIcon size={16} color={primaryColor} />
+      }      
     ];
 
     const { anchorEl } = this.state;
@@ -145,6 +165,10 @@ class TrainModel extends Component {
 
     if (option.action === 'visualize_matrix') {
       this.getModelsImg(this.state.itemSelected.initials);
+    }
+    
+    if (option.action === 'download_model_pipeline') {
+      this.getModelsPipeline(this.state.itemSelected.initials);
     }
 
     this.handleMenuItemClose();
@@ -222,9 +246,11 @@ class TrainModel extends Component {
               <tbody>
                 {
                   typesOfModels.map((item) => {
-                    return data[item].map((model, idx) => {
-                      return this.renderItem(model, idx, item);
-                    })
+                    if(data[item] && data[item] !== []) {
+                      return data[item].map((model, idx) => {
+                        return this.renderItem(model, idx, item);
+                      })
+                    }
                   })
                 }
               </tbody>

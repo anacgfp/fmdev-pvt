@@ -20,7 +20,7 @@ from resources.Datasource import Datasource
 from resources.File import File
 from resources.Phenomenon import Phenomenon
 from resources.PreprocessingAll import PreprocessingAll
-from resources.TrainedModels import TrainedModels
+from resources.TrainedModels import Prevision, TrainedModelPipeline, TrainedModels
 from resources.TrainedModels import TrainedModelsImages
 
 api_bp = Blueprint('api', __name__)
@@ -49,8 +49,9 @@ api.add_resource(Download, '/download/<string:key>')
 api.add_resource(File, '/file', '/file/<string:key>')
 api.add_resource(TrainedModels, '/trained-model')
 api.add_resource(TrainedModelsImages, '/trained-model-image')
+api.add_resource(Prevision, '/fmsales-prevision')
 
 api.add_resource(PreprocessingAll, '/prepr')
 api.add_resource(Train, '/train')
-
+api.add_resource(TrainedModelPipeline, '/model-pipeline')
 
