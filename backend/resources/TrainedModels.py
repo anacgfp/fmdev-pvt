@@ -56,29 +56,7 @@ class TrainedModels(Resource):
         except:
             traceback.print_exc()
             return None, 500
-        
-class Prevision(Resource):
-    # @jwt_required
-    def post(self):
-        try:
-            period = request.args.get('period')
-            feature = request.args.get('feature')
-            time = request.args.get('time') #can be 1, 2, 3
-            time_types = ['Total (T+1)', 'Total (T+2)', 'Total (T+3)']
-            initials = request.args.get('initials')
-            model = load_model('data/models/Experimentos/Dia/ALL/Total (T+2)/et')
-            data = pd.read_csv('data/pre_processing/pre_processed/Dia.csv')
-            pred_holdout = predict_model(model, data)
-            pred_holdout = pred_holdout[['Dia', 'Total (T+1)', 'Total (T+2)', 'Total (T+3)']]
-            pred_holdout.to_csv('data/models/Experimentos/Dia/ALL/Total (T+2)/pred.csv')
-            return pred_holdout.to_json() 
-            
-        except:
-            traceback.print_exc()
-            return None, 500          
-
-            
-        
+    
 class TrainedModelsImages(Resource):    
     # @jwt_required
     def post(self):
