@@ -42,7 +42,7 @@ class SideMenu extends Component {
       <Container>
         <ItemList>
           <Logo>
-            <img alt="" src={logo} />
+            <a href={window.location.origin}> <img alt="" src={logo} /></a>            
           </Logo>
           {links.map((link, idx) => (
             <Item
