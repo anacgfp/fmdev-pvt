@@ -7,6 +7,7 @@ app = Flask(__name__)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
+
 def create_app(config_filename):
     app.config.from_object(config_filename)
 
@@ -23,4 +24,4 @@ def create_app(config_filename):
 
 if __name__ == "__main__":
     app = create_app("config")
-    app.run(debug=True, host='localhost')
+    app.run(debug=True, host='0.0.0.0')

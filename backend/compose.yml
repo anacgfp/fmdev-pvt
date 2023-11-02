@@ -1,0 +1,71 @@
+version: '3'
+
+services:
+  db:
+    image: postgres
+    restart: always
+    container_name: fmdev_db
+    volumes:
+      - ./db:/var/lib/postgresql/data
+      - ./.docker:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_PASSWORD=1234
+    expose:
+      - 5432
+    ports:
+      - 5432:5432
+
+  # dbgate:
+  #   image: dbgate/dbgate
+  #
+  #   restart: always
+  #   ports:
+  #     - 80:3000
+  #   volumes:
+  #     - dbgate-data:/root/.dbgate
+  #   depends_on:
+  #     - db
+  #   environment:
+  #     CONNECTIONS: con2
+
+  #     LABEL_con2: Postgres
+  #     SERVER_con2: db
+  #     USER_con2: postgres
+  #     PASSWORD_con2: 1234
+  #     PORT_con2: 5432
+  #     ENGINE_con2: postgres@dbgate-plugin-postgres
+
+  backend:
+    container_name: backend
+    image: backend:1
+    # build: .
+    ports:
+      - "5000:5000"
+    expose:
+      - 5000
+    volumes:
+      - .:/code
+    environment:
+      - DB_bridge=fmdev_db
+      - DB_USER=postgres
+      - DB_PORT=5432
+      - DB_PWD=1234
+      - DB_NAME=fmdev
+      - FLASK_ENV=dev
+    depends_on:
+      - db
+    entrypoint: python3
+    command: [ "run.py", "-host", "0.0.0.0" ]
+  frontend:
+    container_name: frontend
+    image: node:13
+    ports:
+      - '3000:3000'
+    volumes:
+      - ../frontend/:/srv/react-docker
+    working_dir: /srv/react-docker
+    command: 'yarn start'
+
+volumes:
+  dbgate-data:
+    driver: local
